@@ -1,11 +1,11 @@
 """
-Streaming transcriber — dual-path architecture.
+Streaming transcriber — multi-panel architecture.
 
-Design:
-1. Fast path: 1-sec audio chunks -> Whisper -> instant display (may have errors)
-2. Slow path: every 5 chunks -> combine audio -> Whisper re-transcription ->
-   GPT compares instant vs re-transcribed -> minimal word corrections
-3. After correction -> translate -> append translation to corrected block
+Design (Timekettle-style):
+1. Panel 1: 1-sec audio -> Whisper -> INSTANT raw text (<1s latency)
+2. Panel 2: Each raw chunk -> translate immediately (sync with Panel 1)
+3. Panel 3: Every 5 chunks -> re-transcribe + GPT compare + speaker labels
+4. Panel 4: Corrected text -> translate (sync with Panel 3)
 """
 import numpy as np
 import threading
@@ -22,17 +22,13 @@ from utils.logger import log
 
 
 class StreamingTranscriber:
-    """Dual-path streaming transcriber.
-
-    Fast path: 1-sec chunks transcribed instantly and displayed.
-    Slow path: every N chunks, audio is combined, re-transcribed with Whisper
-    (more context = better accuracy), compared with GPT, and corrected.
+    """Multi-panel streaming transcriber.
 
     Callbacks:
-    - on_text(text, speaker): instant display of each 1-sec chunk
-    - on_group_done(block_start, block_end, corrected, translated, speaker):
-        replace blocks [start..end] with corrected text + translation
-    - on_instant_translation(translated): per-chunk translation (when correction off)
+    - on_raw_text(text, speaker): Panel 1 — instant raw transcription
+    - on_raw_translation(text): Panel 2 — instant translation of raw text
+    - on_corrected(text, speaker): Panel 3 — AI-corrected text with speakers
+    - on_corrected_translation(text): Panel 4 — translation of corrected text
     """
 
     def __init__(
@@ -41,9 +37,12 @@ class StreamingTranscriber:
         sample_rate: int = 16000,
         fast_interval: float = 1.0,
         group_size: int = 5,
-        on_text: Optional[Callable] = None,
-        on_group_done: Optional[Callable] = None,
-        on_instant_translation: Optional[Callable] = None,
+        # Panel callbacks
+        on_raw_text: Optional[Callable] = None,
+        on_raw_translation: Optional[Callable] = None,
+        on_corrected: Optional[Callable] = None,
+        on_corrected_translation: Optional[Callable] = None,
+        # Settings
         translate_to_russian: bool = False,
         noise_reduction: bool = True,
         corrector=None,
@@ -54,9 +53,13 @@ class StreamingTranscriber:
         self._sample_rate = sample_rate
         self._fast_interval = fast_interval
         self._group_size = group_size
-        self._on_text = on_text
-        self._on_group_done = on_group_done
-        self._on_instant_translation = on_instant_translation
+
+        # Panel callbacks
+        self._on_raw_text = on_raw_text
+        self._on_raw_translation = on_raw_translation
+        self._on_corrected = on_corrected
+        self._on_corrected_translation = on_corrected_translation
+
         self._translate = translate_to_russian
         self._noise_reduction = noise_reduction
         self._corrector = corrector
@@ -127,7 +130,7 @@ class StreamingTranscriber:
         if self._is_running:
             self._audio_queue.put(audio)
 
-    # ── Main loop ──
+    # -- Main loop --
 
     def _process_loop(self):
         buffer = np.array([], dtype=np.float32)
@@ -159,10 +162,10 @@ class StreamingTranscriber:
                 break
         return np.concatenate(parts) if parts else np.array([], dtype=np.float32)
 
-    # ── Fast path: 1-sec instant transcription ──
+    # -- Fast path: Panel 1 + Panel 2 --
 
     def _process_fast_chunk(self, audio: np.ndarray):
-        """Transcribe 1-sec chunk with Whisper and display instantly."""
+        """Transcribe 1-sec chunk -> Panel 1 (instant) + Panel 2 (translation)."""
         try:
             processed = audio
             if self._noise_reduction:
@@ -176,7 +179,6 @@ class StreamingTranscriber:
             )
 
             if not result.text.strip():
-                # Still accumulate silent audio for the group
                 self._group_audio.append(audio)
                 self._time_offset += len(audio) / self._sample_rate
                 return
@@ -188,11 +190,19 @@ class StreamingTranscriber:
                 else None
             )
 
-            # === INSTANT DISPLAY ===
+            # === PANEL 1: INSTANT RAW TEXT ===
             block_index = self._block_counter
             self._block_counter += 1
-            if self._on_text:
-                self._on_text(text, speaker)
+            if self._on_raw_text:
+                self._on_raw_text(text, speaker)
+
+            # === PANEL 2: INSTANT TRANSLATION (async, non-blocking) ===
+            if self._translate and self._on_raw_translation:
+                threading.Thread(
+                    target=self._do_raw_translate,
+                    args=(text,),
+                    daemon=True,
+                ).start()
 
             # Accumulate segments
             for seg in result.segments:
@@ -200,30 +210,20 @@ class StreamingTranscriber:
                 seg.end += self._time_offset
                 self._all_segments.append(seg)
 
-            # Accumulate for group
+            # Accumulate for group (Panel 3 + 4)
             self._group_audio.append(audio)
             self._group_texts.append(text)
             self._group_speakers.append(speaker)
 
-            # Feed corrector (for periodic self-healing)
+            # Feed corrector
             if self._corrector and text:
                 prefix = f"[{speaker}]: " if speaker else ""
                 self._corrector.add_chunk(f"{prefix}{text}")
 
             self._time_offset += len(audio) / self._sample_rate
-            log.info(
-                f"Fast [{block_index}]: '{text[:50]}' offset={self._time_offset:.1f}s"
-            )
+            log.info(f"Fast [{block_index}]: '{text[:50]}' t={self._time_offset:.1f}s")
 
-            # Per-chunk translation (when correction is OFF)
-            if not self._live_correction and self._translate and self._on_instant_translation:
-                threading.Thread(
-                    target=self._do_instant_translate,
-                    args=(text,),
-                    daemon=True,
-                ).start()
-
-            # === CHECK GROUP READY ===
+            # === CHECK GROUP READY (Panel 3 + 4) ===
             if len(self._group_texts) >= self._group_size:
                 self._launch_group_processing(block_index, speaker)
 
@@ -231,13 +231,21 @@ class StreamingTranscriber:
             log.error(f"Fast chunk error: {e}")
             self._time_offset += len(audio) / self._sample_rate
 
+    def _do_raw_translate(self, text: str):
+        """Translate raw chunk for Panel 2."""
+        try:
+            translated = self._translate_text(text)
+            if translated and self._on_raw_translation:
+                self._on_raw_translation(translated)
+        except Exception as e:
+            log.error(f"Raw translation error: {e}")
+
+    # -- Slow path: Panel 3 + Panel 4 --
+
     def _launch_group_processing(self, last_block_index: int, fallback_speaker):
-        """Launch background group processing (re-transcription + correction + translation)."""
         group_audio = np.concatenate(self._group_audio)
         group_texts = list(self._group_texts)
         group_speakers = list(self._group_speakers)
-        group_start = self._group_block_start
-        group_end = last_block_index
 
         # Reset group for next batch
         self._group_audio.clear()
@@ -246,29 +254,25 @@ class StreamingTranscriber:
         self._group_block_start = self._block_counter
 
         if self._live_correction:
-            # Full pipeline: re-transcribe + GPT compare + translate
             threading.Thread(
                 target=self._process_group,
-                args=(group_audio, group_texts, group_speakers,
-                      group_start, group_end),
+                args=(group_audio, group_texts, group_speakers),
                 daemon=True,
             ).start()
-        elif self._translate and self._on_group_done:
-            # No correction, but translate the group
+        elif self._translate:
+            # No correction, just translate the combined text
             combined = " ".join(group_texts)
             speaker = next((s for s in group_speakers if s), None)
             threading.Thread(
-                target=self._translate_and_callback,
-                args=(combined, group_start, group_end, speaker),
+                target=self._translate_group,
+                args=(combined, speaker),
                 daemon=True,
             ).start()
 
-    # ── Slow path: re-transcription + GPT compare + translate ──
-
-    def _process_group(self, audio, instant_texts, speakers, block_start, block_end):
-        """Re-transcribe combined audio, compare with instant, correct, translate."""
+    def _process_group(self, audio, instant_texts, speakers):
+        """Re-transcribe + GPT compare -> Panel 3, translate -> Panel 4."""
         try:
-            # 1. Re-transcribe combined audio (more context = more accurate)
+            # 1. Re-transcribe combined audio
             processed = audio
             if self._noise_reduction:
                 processed = enhance_speech(
@@ -287,56 +291,53 @@ class StreamingTranscriber:
             instant_combined = " ".join(instant_texts)
             speaker = next((s for s in speakers if s), None)
 
-            # 2. Compare instant vs re-transcription
+            # 2. Compare
             if instant_combined.strip() == retranscription.strip():
                 corrected = instant_combined
-                log.debug(f"Group [{block_start}-{block_end}]: identical, no correction")
             else:
-                # GPT picks the best words
                 corrected = self._gpt_compare(instant_combined, retranscription)
                 if not corrected:
                     corrected = instant_combined
 
-                if corrected != instant_combined:
-                    log.info(
-                        f"Group [{block_start}-{block_end}] corrected: "
-                        f"'{instant_combined[:40]}' -> '{corrected[:40]}'"
-                    )
-                else:
-                    log.debug(f"Group [{block_start}-{block_end}]: GPT kept instant")
+            # === PANEL 3: CORRECTED TEXT ===
+            if self._on_corrected:
+                self._on_corrected(corrected, speaker)
 
-            # 3. Translate
-            translated = None
-            if self._translate:
+            # === PANEL 4: CORRECTED TRANSLATION ===
+            if self._translate and self._on_corrected_translation:
                 translated = self._translate_text(corrected)
-
-            # 4. Callback to UI
-            if self._on_group_done:
-                self._on_group_done(
-                    block_start, block_end, corrected, translated, speaker
-                )
+                if translated:
+                    self._on_corrected_translation(translated)
 
         except Exception as e:
-            log.error(f"Group [{block_start}-{block_end}] error: {e}")
+            log.error(f"Group processing error: {e}")
+
+    def _translate_group(self, text: str, speaker: Optional[str]):
+        """Translate without correction -> Panel 3 + 4."""
+        try:
+            if self._on_corrected:
+                self._on_corrected(text, speaker)
+            if self._on_corrected_translation:
+                translated = self._translate_text(text)
+                if translated:
+                    self._on_corrected_translation(translated)
+        except Exception as e:
+            log.error(f"Translate group error: {e}")
 
     def _process_group_sync(self):
-        """Process remaining group synchronously (called on stop)."""
         if not self._group_texts:
             return
         try:
             audio = np.concatenate(self._group_audio)
             texts = list(self._group_texts)
             speakers = list(self._group_speakers)
-            start = self._group_block_start
-            end = self._block_counter - 1
-            self._process_group(audio, texts, speakers, start, end)
+            self._process_group(audio, texts, speakers)
         except Exception as e:
             log.error(f"Final group error: {e}")
 
-    # ── GPT comparison ──
+    # -- GPT comparison --
 
     def _gpt_compare(self, instant: str, retranscribed: str) -> str:
-        """GPT compares two transcriptions and picks the best words."""
         try:
             if self._openai is None:
                 self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
@@ -377,7 +378,6 @@ class StreamingTranscriber:
 
             corrected = (response.choices[0].message.content or instant).strip()
 
-            # Validate: correction must be minor
             if self._is_minor_change(instant, corrected):
                 return corrected
             else:
@@ -390,7 +390,6 @@ class StreamingTranscriber:
 
     @staticmethod
     def _is_minor_change(original: str, corrected: str) -> bool:
-        """Check that correction is minor (not a full rewrite)."""
         orig_words = set(original.lower().split())
         corr_words = set(corrected.lower().split())
         if not orig_words:
@@ -399,10 +398,9 @@ class StreamingTranscriber:
         kept_ratio = len(common) / len(orig_words)
         return kept_ratio >= 0.5
 
-    # ── Translation ──
+    # -- Translation --
 
     def _translate_text(self, text: str) -> str:
-        """Translate text to Russian via local model or GPT."""
         if not text.strip():
             return ""
         try:
@@ -431,21 +429,3 @@ class StreamingTranscriber:
         except Exception as e:
             log.error(f"Translation error: {e}")
             return ""
-
-    def _do_instant_translate(self, text: str):
-        """Translate single chunk (when correction is off)."""
-        try:
-            translated = self._translate_text(text)
-            if translated and self._on_instant_translation:
-                self._on_instant_translation(translated)
-        except Exception as e:
-            log.error(f"Instant translation error: {e}")
-
-    def _translate_and_callback(self, text, block_start, block_end, speaker):
-        """Translate group text without correction and send to UI."""
-        try:
-            translated = self._translate_text(text)
-            if self._on_group_done:
-                self._on_group_done(block_start, block_end, text, translated, speaker)
-        except Exception as e:
-            log.error(f"Translate-only group error: {e}")
