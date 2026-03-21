@@ -35,21 +35,20 @@ class WaveformCanvas(ctk.CTkFrame):
         self._height = 0
 
     def _get_bg(self) -> str:
-        # Use dark bg for dark mode
         mode = ctk.get_appearance_mode()
         return "#1a1a2e" if mode == "Dark" else "#f0f0f0"
 
     def _on_resize(self, event):
         self._width = event.width
         self._height = event.height
-        self._draw()
+        self._redraw_bars()
 
     def push_level(self, level: float):
         """Add a new audio level (0.0 - 1.0) and redraw."""
         self._levels.append(max(0.03, min(1.0, level)))
-        self._draw()
+        self._redraw_bars()
 
-    def _draw(self):
+    def _redraw_bars(self):
         if self._width == 0 or self._height == 0:
             return
 
@@ -77,4 +76,4 @@ class WaveformCanvas(ctk.CTkFrame):
     def reset(self):
         """Clear the waveform."""
         self._levels = deque([0.05] * self.bar_count, maxlen=self.bar_count)
-        self._draw()
+        self._redraw_bars()

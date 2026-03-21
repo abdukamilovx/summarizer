@@ -1,0 +1,33 @@
+node_modules/
+__pycache__/
+*.pyc
+*.pyo
+*.py[cod]
+*.egg-info/
+dist/
+build/
+*.db
+*.sqlite3
+*.log
+.env
+**/.env
+ai_agents_config.json
+dashboard/ai_predictions/
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Audio temp
+*.wav.tmp
+
+# ML models (large files)
+models/
