@@ -11,13 +11,16 @@ from analysis.prompts import (
     KEY_POINTS_PROMPT,
     TOPICS_PROMPT,
     TRANSLATE_FULL_PROMPT,
+    DIALOGUE_PROMPT,
+    BATCH_DIARIZATION_PROMPT,
+    POST_EDIT_PROMPT,
 )
 from utils.config import settings
 from utils.logger import log
 
 
 class Summarizer:
-    """Analyzes transcripts: summaries, action items, key points, topics."""
+    """Analyzes transcripts: summaries, action items, key points, topics, dialogue."""
 
     def __init__(
         self,
@@ -92,6 +95,34 @@ class Summarizer:
             temperature=0.2,
         )
 
+    def reconstruct_dialogue(self, transcript: str) -> str:
+        """Reconstruct structured dialogue with speaker identification.
+
+        Identifies speakers by name from context, assigns roles,
+        and includes translation if the text is in a foreign language.
+        """
+        log.info("Reconstructing dialogue...")
+        return self._call_llm(
+            DIALOGUE_PROMPT.format(transcript=transcript),
+            temperature=0.3,
+        )
+
+    def batch_diarize(self, transcript: str) -> str:
+        """Process uploaded file: diarization + structuring + correction."""
+        log.info("Batch diarization and structuring...")
+        return self._call_llm(
+            BATCH_DIARIZATION_PROMPT.format(transcript=transcript),
+            temperature=0.3,
+        )
+
+    def post_edit(self, transcript: str) -> str:
+        """Final cleanup of a completed transcript."""
+        log.info("Post-editing transcript...")
+        return self._call_llm(
+            POST_EDIT_PROMPT.format(transcript=transcript),
+            temperature=0.2,
+        )
+
     def full_analysis(self, transcript: str) -> dict:
         """Run all analyses and return combined results."""
         return {
@@ -100,4 +131,5 @@ class Summarizer:
             "key_points": self.get_key_points(transcript),
             "topics": self.analyze_topics(transcript),
             "translation": self.translate(transcript),
+            "dialogue": self.reconstruct_dialogue(transcript),
         }

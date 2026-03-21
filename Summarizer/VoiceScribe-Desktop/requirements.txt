@@ -12,6 +12,11 @@ scikit-learn>=1.0
 # Transcription & AI
 openai>=1.0.0
 
+# Local translation (CTranslate2 + NLLB-200)
+ctranslate2>=4.0.0
+sentencepiece>=0.1.99
+transformers>=4.30.0
+
 # UI
 customtkinter>=5.2.0
 

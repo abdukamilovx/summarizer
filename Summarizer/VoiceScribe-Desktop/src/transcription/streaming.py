@@ -1,7 +1,11 @@
 """
-Streaming transcriber that accumulates audio and transcribes in chunks.
-Sends chunks to OpenAI Whisper API periodically during recording.
-Uses overlap between chunks to prevent losing words at boundaries.
+Streaming transcriber — dual-path architecture.
+
+Design:
+1. Fast path: 1-sec audio chunks -> Whisper -> instant display (may have errors)
+2. Slow path: every 5 chunks -> combine audio -> Whisper re-transcription ->
+   GPT compares instant vs re-transcribed -> minimal word corrections
+3. After correction -> translate -> append translation to corrected block
 """
 import numpy as np
 import threading
@@ -16,84 +20,101 @@ from audio.preprocessor import enhance_speech
 from utils.config import settings
 from utils.logger import log
 
-# Overlap duration in seconds — keeps tail of previous chunk
-# so Whisper has context and doesn't cut words mid-sentence.
-OVERLAP_SEC = 3.0
-
-TRANSLATE_PROMPT = (
-    "Переведи следующий текст на русский язык. "
-    "Сохрани смысл и стиль. Верни ТОЛЬКО перевод, без пояснений.\n\n{text}"
-)
-
 
 class StreamingTranscriber:
-    """Accumulates audio chunks and transcribes every `interval` seconds.
+    """Dual-path streaming transcriber.
 
-    Features:
-    - Overlap between chunks to avoid losing words at boundaries
-    - Processes all remaining audio when stopped
-    - Optional real-time translation to Russian
+    Fast path: 1-sec chunks transcribed instantly and displayed.
+    Slow path: every N chunks, audio is combined, re-transcribed with Whisper
+    (more context = better accuracy), compared with GPT, and corrected.
+
+    Callbacks:
+    - on_text(text, speaker): instant display of each 1-sec chunk
+    - on_group_done(block_start, block_end, corrected, translated, speaker):
+        replace blocks [start..end] with corrected text + translation
+    - on_instant_translation(translated): per-chunk translation (when correction off)
     """
 
     def __init__(
         self,
         transcriber: WhisperAPITranscriber,
         sample_rate: int = 16000,
-        interval_sec: float = 10.0,
-        on_result: Optional[Callable[[TranscriptionResult], None]] = None,
+        fast_interval: float = 1.0,
+        group_size: int = 5,
+        on_text: Optional[Callable] = None,
+        on_group_done: Optional[Callable] = None,
+        on_instant_translation: Optional[Callable] = None,
         translate_to_russian: bool = False,
         noise_reduction: bool = True,
         corrector=None,
+        live_correction: bool = True,
+        local_translator=None,
     ):
         self._transcriber = transcriber
         self._sample_rate = sample_rate
-        self._interval = interval_sec
-        self._on_result = on_result
+        self._fast_interval = fast_interval
+        self._group_size = group_size
+        self._on_text = on_text
+        self._on_group_done = on_group_done
+        self._on_instant_translation = on_instant_translation
         self._translate = translate_to_russian
         self._noise_reduction = noise_reduction
-        self._corrector = corrector  # Optional[TranscriptCorrector]
+        self._corrector = corrector
+        self._live_correction = live_correction
+        self._local_translator = local_translator
 
         self._audio_queue: queue.Queue[np.ndarray] = queue.Queue()
         self._is_running = False
         self._thread: Optional[threading.Thread] = None
 
+        # Block tracking
+        self._block_counter = 0
+        self._group_audio: list[np.ndarray] = []
+        self._group_texts: list[str] = []
+        self._group_speakers: list[Optional[str]] = []
+        self._group_block_start = 0
+
         # Accumulated results
         self._all_segments: list[TranscriptionSegment] = []
         self._time_offset: float = 0.0
 
-        # Overlap samples kept from previous chunk
-        self._overlap_samples = int(OVERLAP_SEC * sample_rate)
-        self._prev_tail: Optional[np.ndarray] = None
-
-        # OpenAI client for translation (lazy init)
+        # OpenAI client (lazy)
         self._openai: Optional[OpenAI] = None
 
     def start(self):
         self._is_running = True
         self._all_segments.clear()
         self._time_offset = 0.0
-        self._prev_tail = None
+        self._block_counter = 0
+        self._group_audio.clear()
+        self._group_texts.clear()
+        self._group_speakers.clear()
+        self._group_block_start = 0
         self._thread = threading.Thread(target=self._process_loop, daemon=True)
         self._thread.start()
-        log.info(f"Streaming transcriber started (overlap={int(OVERLAP_SEC)}s, translate={self._translate}, denoise={self._noise_reduction})")
+        log.info(
+            f"Streaming started (fast={self._fast_interval}s, group={self._group_size}, "
+            f"translate={self._translate}, correction={self._live_correction})"
+        )
 
     def stop(self) -> TranscriptionResult:
-        """Stop and return final combined result.
-
-        Processes ALL remaining audio before returning so nothing is lost.
-        """
+        """Stop and return final combined result."""
         self._is_running = False
         if self._thread:
             self._thread.join(timeout=30.0)
             self._thread = None
 
-        # Process any remaining audio in the queue
+        # Process remaining audio in queue
         remaining = self._drain_queue()
-        if len(remaining) > self._sample_rate * 0.5:  # at least 0.5 sec
-            self._transcribe_chunk(remaining, is_final=True)
+        if len(remaining) > self._sample_rate * 0.3:
+            self._process_fast_chunk(remaining)
+
+        # Process remaining group (sync)
+        if self._group_texts:
+            self._process_group_sync()
 
         full_text = " ".join(seg.text for seg in self._all_segments)
-        log.info(f"Streaming transcriber stopped. Total segments: {len(self._all_segments)}")
+        log.info(f"Streaming stopped. Segments: {len(self._all_segments)}")
 
         return TranscriptionResult(
             text=full_text,
@@ -103,28 +124,29 @@ class StreamingTranscriber:
         )
 
     def add_audio(self, audio: np.ndarray):
-        """Add audio data to the processing queue."""
         if self._is_running:
             self._audio_queue.put(audio)
 
+    # ── Main loop ──
+
     def _process_loop(self):
         buffer = np.array([], dtype=np.float32)
-        chunk_samples = int(self._interval * self._sample_rate)
+        chunk_samples = int(self._fast_interval * self._sample_rate)
 
         while self._is_running:
             try:
                 audio = self._audio_queue.get(timeout=0.2)
                 buffer = np.concatenate([buffer, audio])
 
-                if len(buffer) >= chunk_samples:
+                while len(buffer) >= chunk_samples:
                     chunk = buffer[:chunk_samples]
                     buffer = buffer[chunk_samples:]
-                    self._transcribe_chunk(chunk)
+                    self._process_fast_chunk(chunk)
 
             except queue.Empty:
                 continue
 
-        # Don't lose remaining buffer — it'll be handled in stop()
+        # Put remaining buffer back for stop() to process
         if len(buffer) > 0:
             self._audio_queue.put(buffer)
 
@@ -137,105 +159,293 @@ class StreamingTranscriber:
                 break
         return np.concatenate(parts) if parts else np.array([], dtype=np.float32)
 
-    def _transcribe_chunk(self, audio: np.ndarray, is_final: bool = False):
+    # ── Fast path: 1-sec instant transcription ──
+
+    def _process_fast_chunk(self, audio: np.ndarray):
+        """Transcribe 1-sec chunk with Whisper and display instantly."""
         try:
-            # Prepend overlap from previous chunk for context
-            if self._prev_tail is not None and len(self._prev_tail) > 0:
-                audio_with_overlap = np.concatenate([self._prev_tail, audio])
-                overlap_duration = len(self._prev_tail) / self._sample_rate
-            else:
-                audio_with_overlap = audio
-                overlap_duration = 0.0
-
-            # Save tail for next chunk (unless this is the last chunk)
-            if not is_final:
-                tail_len = min(self._overlap_samples, len(audio))
-                self._prev_tail = audio[-tail_len:].copy()
-            else:
-                self._prev_tail = None
-
-            # Clean audio: bandpass filter + noise reduction
+            processed = audio
             if self._noise_reduction:
-                audio_with_overlap = enhance_speech(
-                    audio_with_overlap,
-                    self._sample_rate,
-                    enable_bandpass=True,
-                    enable_noise_reduction=True,
+                processed = enhance_speech(
+                    audio, self._sample_rate,
+                    enable_bandpass=True, enable_noise_reduction=True,
                 )
 
             result = self._transcriber.transcribe_numpy(
-                audio_with_overlap, sample_rate=self._sample_rate
+                processed, sample_rate=self._sample_rate
             )
 
-            # Translate if enabled
-            if self._translate and result.text.strip():
-                translated_text = self._translate_text(result.text.strip())
-                if translated_text:
-                    # Build translated segments
-                    if result.segments:
-                        translated_segments = []
-                        for s in result.segments:
-                            t_text = self._translate_text(s.text) if s.text.strip() else s.text
-                            translated_segments.append(TranscriptionSegment(
-                                start=s.start, end=s.end,
-                                text=t_text, confidence=s.confidence,
-                                language="ru", speaker=s.speaker,
-                            ))
-                    else:
-                        translated_segments = [TranscriptionSegment(
-                            start=0, end=len(audio) / self._sample_rate,
-                            text=translated_text, language="ru",
-                        )]
+            if not result.text.strip():
+                # Still accumulate silent audio for the group
+                self._group_audio.append(audio)
+                self._time_offset += len(audio) / self._sample_rate
+                return
 
-                    result = TranscriptionResult(
-                        text=translated_text,
-                        segments=translated_segments,
-                        language="ru",
-                        duration=result.duration,
-                    )
+            text = result.text.strip()
+            speaker = (
+                result.segments[0].speaker
+                if result.segments and result.segments[0].speaker
+                else None
+            )
 
-            # Adjust segment timestamps: skip overlap region,
-            # then offset to global timeline
+            # === INSTANT DISPLAY ===
+            block_index = self._block_counter
+            self._block_counter += 1
+            if self._on_text:
+                self._on_text(text, speaker)
+
+            # Accumulate segments
             for seg in result.segments:
-                seg.start = max(0, seg.start - overlap_duration) + self._time_offset
-                seg.end = max(0, seg.end - overlap_duration) + self._time_offset
+                seg.start += self._time_offset
+                seg.end += self._time_offset
                 self._all_segments.append(seg)
 
-            # Advance offset by the NEW audio length (not overlap)
+            # Accumulate for group
+            self._group_audio.append(audio)
+            self._group_texts.append(text)
+            self._group_speakers.append(speaker)
+
+            # Feed corrector (for periodic self-healing)
+            if self._corrector and text:
+                prefix = f"[{speaker}]: " if speaker else ""
+                self._corrector.add_chunk(f"{prefix}{text}")
+
             self._time_offset += len(audio) / self._sample_rate
+            log.info(
+                f"Fast [{block_index}]: '{text[:50]}' offset={self._time_offset:.1f}s"
+            )
 
-            if self._on_result:
-                self._on_result(result)
+            # Per-chunk translation (when correction is OFF)
+            if not self._live_correction and self._translate and self._on_instant_translation:
+                threading.Thread(
+                    target=self._do_instant_translate,
+                    args=(text,),
+                    daemon=True,
+                ).start()
 
-            # Feed text to corrector for self-healing
-            if self._corrector and result.text.strip():
-                self._corrector.add_chunk(result.text.strip())
-
-            log.info(f"Chunk transcribed: '{result.text[:60]}...' at offset {self._time_offset:.1f}s")
+            # === CHECK GROUP READY ===
+            if len(self._group_texts) >= self._group_size:
+                self._launch_group_processing(block_index, speaker)
 
         except Exception as e:
-            log.error(f"Streaming transcription error: {e}")
+            log.error(f"Fast chunk error: {e}")
             self._time_offset += len(audio) / self._sample_rate
 
-    def _translate_text(self, text: str) -> str:
-        """Translate text to Russian using OpenAI GPT."""
-        if not text.strip():
-            return text
+    def _launch_group_processing(self, last_block_index: int, fallback_speaker):
+        """Launch background group processing (re-transcription + correction + translation)."""
+        group_audio = np.concatenate(self._group_audio)
+        group_texts = list(self._group_texts)
+        group_speakers = list(self._group_speakers)
+        group_start = self._group_block_start
+        group_end = last_block_index
+
+        # Reset group for next batch
+        self._group_audio.clear()
+        self._group_texts.clear()
+        self._group_speakers.clear()
+        self._group_block_start = self._block_counter
+
+        if self._live_correction:
+            # Full pipeline: re-transcribe + GPT compare + translate
+            threading.Thread(
+                target=self._process_group,
+                args=(group_audio, group_texts, group_speakers,
+                      group_start, group_end),
+                daemon=True,
+            ).start()
+        elif self._translate and self._on_group_done:
+            # No correction, but translate the group
+            combined = " ".join(group_texts)
+            speaker = next((s for s in group_speakers if s), None)
+            threading.Thread(
+                target=self._translate_and_callback,
+                args=(combined, group_start, group_end, speaker),
+                daemon=True,
+            ).start()
+
+    # ── Slow path: re-transcription + GPT compare + translate ──
+
+    def _process_group(self, audio, instant_texts, speakers, block_start, block_end):
+        """Re-transcribe combined audio, compare with instant, correct, translate."""
+        try:
+            # 1. Re-transcribe combined audio (more context = more accurate)
+            processed = audio
+            if self._noise_reduction:
+                processed = enhance_speech(
+                    audio, self._sample_rate,
+                    enable_bandpass=True, enable_noise_reduction=True,
+                )
+
+            result = self._transcriber.transcribe_numpy(
+                processed, sample_rate=self._sample_rate
+            )
+            retranscription = result.text.strip()
+
+            if not retranscription:
+                return
+
+            instant_combined = " ".join(instant_texts)
+            speaker = next((s for s in speakers if s), None)
+
+            # 2. Compare instant vs re-transcription
+            if instant_combined.strip() == retranscription.strip():
+                corrected = instant_combined
+                log.debug(f"Group [{block_start}-{block_end}]: identical, no correction")
+            else:
+                # GPT picks the best words
+                corrected = self._gpt_compare(instant_combined, retranscription)
+                if not corrected:
+                    corrected = instant_combined
+
+                if corrected != instant_combined:
+                    log.info(
+                        f"Group [{block_start}-{block_end}] corrected: "
+                        f"'{instant_combined[:40]}' -> '{corrected[:40]}'"
+                    )
+                else:
+                    log.debug(f"Group [{block_start}-{block_end}]: GPT kept instant")
+
+            # 3. Translate
+            translated = None
+            if self._translate:
+                translated = self._translate_text(corrected)
+
+            # 4. Callback to UI
+            if self._on_group_done:
+                self._on_group_done(
+                    block_start, block_end, corrected, translated, speaker
+                )
+
+        except Exception as e:
+            log.error(f"Group [{block_start}-{block_end}] error: {e}")
+
+    def _process_group_sync(self):
+        """Process remaining group synchronously (called on stop)."""
+        if not self._group_texts:
+            return
+        try:
+            audio = np.concatenate(self._group_audio)
+            texts = list(self._group_texts)
+            speakers = list(self._group_speakers)
+            start = self._group_block_start
+            end = self._block_counter - 1
+            self._process_group(audio, texts, speakers, start, end)
+        except Exception as e:
+            log.error(f"Final group error: {e}")
+
+    # ── GPT comparison ──
+
+    def _gpt_compare(self, instant: str, retranscribed: str) -> str:
+        """GPT compares two transcriptions and picks the best words."""
         try:
             if self._openai is None:
                 self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
 
             response = self._openai.chat.completions.create(
-                model=settings.ANALYSIS_MODEL,
+                model="gpt-4o-mini",
                 messages=[
-                    {"role": "system", "content": "Ты точный переводчик. Переводи на русский язык."},
-                    {"role": "user", "content": TRANSLATE_PROMPT.format(text=text)},
+                    {
+                        "role": "system",
+                        "content": (
+                            "Ты модуль сравнения двух транскрипций одного и того же аудио.\n"
+                            "Первая — мгновенная (собрана из коротких 1-секундных фрагментов, "
+                            "может содержать ошибки на стыках слов).\n"
+                            "Вторая — повторная (из объединённого аудио ~5 секунд, "
+                            "более точная за счёт контекста).\n\n"
+                            "Правила:\n"
+                            "1. Сравни обе транскрипции пословно.\n"
+                            "2. Где слова совпадают — оставь как есть.\n"
+                            "3. Где отличаются — выбери наиболее подходящее по смыслу "
+                            "и звучанию слово.\n"
+                            "4. Делай МИНИМАЛЬНЫЕ изменения. Не переписывай текст.\n"
+                            "5. Не добавляй слова, которых нет ни в одной из версий.\n"
+                            "6. Верни ТОЛЬКО итоговый текст, без пояснений."
+                        ),
+                    },
+                    {
+                        "role": "user",
+                        "content": (
+                            f"МГНОВЕННАЯ ТРАНСКРИПЦИЯ (из 1-сек фрагментов):\n{instant}\n\n"
+                            f"ПОВТОРНАЯ ТРАНСКРИПЦИЯ (из 5-сек аудио):\n{retranscribed}\n\n"
+                            f"ЛУЧШИЙ ВАРИАНТ:"
+                        ),
+                    },
+                ],
+                temperature=0.1,
+                max_tokens=500,
+            )
+
+            corrected = (response.choices[0].message.content or instant).strip()
+
+            # Validate: correction must be minor
+            if self._is_minor_change(instant, corrected):
+                return corrected
+            else:
+                log.warning("GPT changed too much, keeping instant version")
+                return instant
+
+        except Exception as e:
+            log.error(f"GPT compare error: {e}")
+            return instant
+
+    @staticmethod
+    def _is_minor_change(original: str, corrected: str) -> bool:
+        """Check that correction is minor (not a full rewrite)."""
+        orig_words = set(original.lower().split())
+        corr_words = set(corrected.lower().split())
+        if not orig_words:
+            return True
+        common = orig_words & corr_words
+        kept_ratio = len(common) / len(orig_words)
+        return kept_ratio >= 0.5
+
+    # ── Translation ──
+
+    def _translate_text(self, text: str) -> str:
+        """Translate text to Russian via local model or GPT."""
+        if not text.strip():
+            return ""
+        try:
+            # Local translator (fast, no API call)
+            if self._local_translator and self._local_translator.is_ready:
+                return self._local_translator.translate(text, target_lang="ru")
+
+            # GPT fallback
+            if self._openai is None:
+                self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+            response = self._openai.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "Ты переводчик. Переводи на русский. Верни ТОЛЬКО перевод.",
+                    },
+                    {"role": "user", "content": text},
                 ],
                 temperature=0.2,
-                max_tokens=2000,
+                max_tokens=1000,
             )
-            translated = response.choices[0].message.content or text
-            return translated.strip()
+            return (response.choices[0].message.content or "").strip()
+
         except Exception as e:
             log.error(f"Translation error: {e}")
-            return text
+            return ""
+
+    def _do_instant_translate(self, text: str):
+        """Translate single chunk (when correction is off)."""
+        try:
+            translated = self._translate_text(text)
+            if translated and self._on_instant_translation:
+                self._on_instant_translation(translated)
+        except Exception as e:
+            log.error(f"Instant translation error: {e}")
+
+    def _translate_and_callback(self, text, block_start, block_end, speaker):
+        """Translate group text without correction and send to UI."""
+        try:
+            translated = self._translate_text(text)
+            if self._on_group_done:
+                self._on_group_done(block_start, block_end, text, translated, speaker)
+        except Exception as e:
+            log.error(f"Translate-only group error: {e}")

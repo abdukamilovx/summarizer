@@ -2,6 +2,9 @@
 Self-healing transcript corrector.
 Accumulates raw transcript chunks, saves to file, and periodically
 sends the full text to GPT for error correction and gap filling.
+
+Enhanced: uses context to identify speaker names, fix previously
+misrecognized terms, and maintain consistency across chunks.
 """
 import threading
 from pathlib import Path
@@ -23,6 +26,7 @@ class TranscriptCorrector:
     - Duplicate phrases from overlap
     - Speech recognition errors
     - Incoherent transitions
+    - Speaker name identification from context
     """
 
     def __init__(
@@ -85,7 +89,11 @@ class TranscriptCorrector:
                 messages=[
                     {
                         "role": "system",
-                        "content": "Ты редактор транскрипций. Исправляй ошибки, не добавляя нового содержания.",
+                        "content": (
+                            "Ты редактор транскрипций. Исправляй ошибки, не добавляя нового содержания. "
+                            "Если имя или термин неправильно распознан в начале, но правильно позже — "
+                            "исправь ВСЕ предыдущие вхождения. Идентифицируй спикеров по именам из контекста."
+                        ),
                     },
                     {
                         "role": "user",
@@ -98,6 +106,20 @@ class TranscriptCorrector:
 
             corrected = response.choices[0].message.content or raw_text
             self._corrected_text = corrected.strip()
+
+            # Update raw chunks with corrected version for consistency
+            # so future corrections build on the improved version
+            with self._lock:
+                corrected_lines = [
+                    line.strip() for line in self._corrected_text.split("\n")
+                    if line.strip()
+                ]
+                if corrected_lines:
+                    self._raw_chunks = corrected_lines
+
+            # Rewrite raw file with corrected version
+            with open(self._raw_path, "w", encoding="utf-8") as f:
+                f.write(self._corrected_text + "\n")
 
             log.info("Transcript correction complete")
 
@@ -119,6 +141,15 @@ class TranscriptCorrector:
         if self._corrected_text:
             return self._corrected_text
         return self.get_raw_text()
+
+    def replace_chunks(self, new_chunks: list[str]):
+        """Replace raw chunks (e.g. after diarization adds speaker labels)."""
+        with self._lock:
+            self._raw_chunks = list(new_chunks)
+        # Rewrite the raw file with updated chunks
+        with open(self._raw_path, "w", encoding="utf-8") as f:
+            for chunk in new_chunks:
+                f.write(chunk + "\n\n")
 
     def force_correction(self):
         """Force a correction run regardless of chunk count."""
