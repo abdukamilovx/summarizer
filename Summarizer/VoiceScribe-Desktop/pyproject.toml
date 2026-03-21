@@ -1,0 +1,8 @@
+[project]
+name = "voicescribe-desktop"
+version = "0.1.0"
+description = "AI-powered audio transcription and analysis desktop app"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]

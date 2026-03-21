@@ -1,0 +1,1685 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🏗️ Pearl PM Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c1222;--card:#141d30;--border:#1e2d4a;--text:#e8edf5;--muted:#7b8ba8;--accent:#38bdf8;--green:#22c55e;--red:#ef4444;--yellow:#eab308;--purple:#a78bfa;--orange:#f97316;--sidebar:220px;--px-day:36px}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Manrope',sans-serif}
+body{background:var(--bg);color:var(--text);display:flex;height:100vh;overflow:hidden;pointer-events:auto}
+body.auth-required aside,body.auth-required main{filter:blur(2px);pointer-events:none;user-select:none}
+::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+aside{width:var(--sidebar);background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;z-index:50}
+.logo{padding:.8rem 1rem;font-size:1rem;font-weight:800;color:var(--accent);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.5rem}
+nav{padding:.4rem;display:flex;flex-direction:column;gap:1px;flex:1;overflow-y:auto}
+.nav-item{padding:.4rem .65rem;border-radius:.3rem;cursor:pointer;color:var(--muted);font-size:.75rem;font-weight:500;transition:all .12s;display:flex;align-items:center;gap:.4rem}
+.nav-item:hover{background:rgba(56,189,248,.08);color:var(--text)}
+.nav-item.active{background:linear-gradient(135deg,#38bdf8,#3b82f6);color:#fff;font-weight:700}
+.nav-sep{height:1px;background:var(--border);margin:3px 4px}
+.sidebar-bottom{padding:.5rem;border-top:1px solid var(--border);font-size:.65rem}
+.conn-status{display:flex;align-items:center;gap:5px;color:var(--muted)}
+.conn-dot{width:7px;height:7px;border-radius:50%;background:var(--red);transition:.3s}
+.conn-dot.live{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,.5)}
+main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.view{display:none;flex-direction:column;height:100%;overflow:hidden}.view.active{display:flex}
+.vh{padding:.65rem 1rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:.5rem;flex-wrap:wrap}
+.vh h1{font-size:.95rem;font-weight:700}.vh p{font-size:.65rem;color:var(--muted)}
+.vb{flex:1;overflow-y:auto;padding:.8rem;display:flex;flex-direction:column;gap:.8rem}
+.btn{padding:.3rem .65rem;border-radius:.3rem;border:none;cursor:pointer;font-size:.72rem;font-weight:600;transition:all .12s;white-space:nowrap}
+.btn-p{background:linear-gradient(135deg,#38bdf8,#3b82f6);color:#fff}.btn-p:hover{opacity:.85}
+.btn-d{background:var(--red);color:#fff}.btn-s{background:var(--green);color:#fff}
+.btn-g{background:transparent;border:1px solid var(--border);color:var(--muted)}.btn-g:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:.22rem .45rem;font-size:.66rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:.45rem;padding:.7rem}
+.card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:.6rem}
+.card-title{font-size:.8rem;font-weight:700}
+select,input[type=text],input[type=date],input[type=email],input[type=tel],textarea{background:rgba(0,0,0,.25);color:var(--text);border:1px solid var(--border);padding:.32rem .5rem;border-radius:.3rem;font-size:.76rem;width:100%;font-family:'Manrope',sans-serif}
+select{cursor:pointer;width:auto}textarea{resize:vertical;min-height:50px}
+.fg{margin-bottom:.5rem}.fg label{display:block;font-size:.68rem;color:var(--muted);margin-bottom:2px;font-weight:500}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-bottom:.8rem}
+.kpi-card{background:var(--card);border:1px solid var(--border);border-radius:.4rem;padding:.7rem;position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.kpi-blue::before{background:var(--accent)}.kpi-red::before{background:var(--red)}.kpi-green::before{background:var(--green)}.kpi-yellow::before{background:var(--yellow)}
+.kpi-label{font-size:.62rem;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.kpi-value{font-size:2rem;font-weight:800;line-height:1}
+.kpi-sub{font-size:.6rem;color:var(--muted);margin-top:4px}
+/* Gantt */
+.gantt-wrap{overflow:auto;flex:1;min-height:0;border:1px solid var(--border);border-radius:.4rem;background:var(--card)}
+.g-hdr{display:flex;position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--border)}
+.g-lbl-h{width:240px;min-width:240px;flex-shrink:0;padding:.35rem .5rem;font-size:.62rem;color:var(--muted);font-weight:700;text-transform:uppercase;border-right:1px solid var(--border);position:sticky;left:0;z-index:25;background:var(--card)}
+.g-tl-h{display:flex;flex:none}
+.g-dc{flex-shrink:0;width:var(--px-day);border-left:1px solid rgba(255,255,255,.03);padding:1px;font-size:7px;color:var(--muted);text-align:center;line-height:1.2}
+.g-dc.ms{color:var(--text);background:rgba(56,189,248,.03);font-weight:700}
+.g-dc .dn{font-size:8px;font-weight:600}.g-dc .dw{font-size:6px;opacity:.5}
+.g-row{display:flex;min-height:26px;border-bottom:1px solid rgba(255,255,255,.02);align-items:center}.g-row:hover{background:rgba(255,255,255,.012)}
+.g-rl{width:240px;min-width:240px;flex-shrink:0;padding:.22rem .35rem .22rem .5rem;font-size:.68rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-right:1px solid var(--border);position:sticky;left:0;z-index:15;background:var(--card);cursor:pointer}
+.g-row:hover .g-rl{background:rgba(20,29,48,.98)}
+.g-rl.i1{padding-left:.7rem;font-weight:700;color:var(--accent);background:rgba(56,189,248,.04)}
+.g-rl.i2{padding-left:1.4rem;font-size:.64rem;color:var(--muted)}
+.g-tl{flex:none;position:relative;height:26px}
+.g-bar{position:absolute;height:11px;border-radius:6px;top:50%;transform:translateY(-50%);cursor:grab;min-width:4px;user-select:none}
+.g-bar:active{cursor:grabbing}
+.g-bar.not_started{background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.15)}
+.g-bar.in_progress{background:#3b82f6;box-shadow:0 0 4px rgba(59,130,246,.25)}
+.g-bar.on_review{background:var(--yellow)}.g-bar.completed{background:var(--green)}.g-bar.blocked{background:var(--red)}
+.g-bar-resize{position:absolute;right:0;top:0;bottom:0;width:6px;cursor:ew-resize;background:rgba(255,255,255,.15);border-radius:0 6px 6px 0}
+.g-ddl{position:absolute;top:2px;bottom:2px;width:2px;background:var(--yellow);z-index:5}
+.g-ddl::before{content:'';position:absolute;top:0;left:-3px;width:8px;height:8px;background:var(--yellow);border-radius:50%}
+.today-l{position:absolute;top:0;bottom:0;width:2px;background:var(--red);opacity:.4;z-index:10;pointer-events:none}
+.legend{display:flex;gap:.5rem;flex-wrap:wrap}.legend i{display:flex;align-items:center;gap:3px;font-size:.63rem;color:var(--muted);font-style:normal}.legend b{width:7px;height:7px;border-radius:50%;font-weight:normal}
+/* Tables */
+table.dt{width:100%;border-collapse:collapse;font-size:.72rem}
+table.dt th{padding:.35rem .45rem;text-align:left;color:var(--muted);font-size:.62rem;text-transform:uppercase;border-bottom:1px solid var(--border)}
+table.dt td{padding:.35rem .45rem;border-bottom:1px solid rgba(255,255,255,.02)}
+.badge{display:inline-flex;padding:1px 5px;border-radius:8px;font-size:.62rem;font-weight:600}
+.badge-red{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-green{background:rgba(34,197,94,.15);color:var(--green)}
+.badge-blue{background:rgba(56,189,248,.15);color:var(--accent)}
+.badge-yellow{background:rgba(234,179,8,.15);color:var(--yellow)}
+/* Task list */
+.task-item{display:flex;gap:.6rem;padding:.55rem .7rem;border-bottom:1px solid rgba(255,255,255,.02);align-items:flex-start}
+.task-item:hover{background:rgba(255,255,255,.012)}
+.t-dot{width:7px;height:7px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.t-body{flex:1;min-width:0}
+.t-title{font-size:.74rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.t-meta{font-size:.64rem;color:var(--muted);margin-top:2px;display:flex;gap:.4rem;flex-wrap:wrap}
+.t-sec{font-size:.6rem;background:rgba(56,189,248,.12);color:var(--accent);padding:1px 5px;border-radius:3px}
+/* Chat */
+.chat-shell{display:flex;height:100%;gap:.6rem;min-height:0}
+.chat-wrap{display:flex;flex-direction:column;height:100%;overflow:hidden;flex:1;min-width:0}
+.chat-msgs{flex:1;overflow-y:auto;padding:.6rem;display:flex;flex-direction:column;gap:.4rem}
+.ch-msg{max-width:80%;padding:.45rem .6rem;border-radius:.45rem;font-size:.74rem;line-height:1.4}
+.ch-out{align-self:flex-end;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.1)}
+.ch-in{align-self:flex-start;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1)}
+.ch-bot{align-self:flex-start;background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.1)}
+.ch-sender{font-size:.62rem;font-weight:700;margin-bottom:2px}
+.ch-time{font-size:.57rem;color:var(--muted);margin-top:2px;text-align:right}
+.chat-input{border-top:1px solid var(--border);padding:.5rem;display:flex;gap:.4rem}
+.chat-participants{width:310px;min-width:260px;background:var(--card);border:1px solid var(--border);border-radius:.45rem;display:flex;flex-direction:column;overflow:hidden}
+.chat-p-head{padding:.5rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:.35rem}
+.chat-p-list{flex:1;overflow-y:auto;padding:.4rem;display:flex;flex-direction:column;gap:.35rem}
+.chat-p-item{display:flex;align-items:center;justify-content:space-between;gap:.35rem;padding:.35rem;border:1px solid rgba(255,255,255,.04);border-radius:.35rem}
+.chat-p-meta{min-width:0;flex:1}
+.chat-p-name{font-size:.72rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chat-p-sub{font-size:.6rem;color:var(--muted)}
+/* Members */
+.m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.6rem}
+.m-card{background:var(--card);border:1px solid var(--border);border-radius:.4rem;padding:.6rem;display:flex;align-items:center;gap:.6rem;transition:border-color .12s}
+.m-card:hover{border-color:var(--accent)}
+.m-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:#fff;flex-shrink:0}
+.m-online{position:relative}.m-online::after{content:'';position:absolute;bottom:0;right:0;width:8px;height:8px;background:var(--green);border-radius:50%;border:2px solid var(--card)}
+/* Workload chart */
+.wl-bar{margin-bottom:.5rem}
+.wl-label{display:flex;justify-content:space-between;font-size:.68rem;margin-bottom:3px}
+.wl-track{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden}
+.wl-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),#3b82f6);transition:width .5s}
+/* Network graph */
+#network-canvas{width:100%;height:100%;cursor:grab}
+/* AI Sidebar */
+.ai-panel{width:290px;min-width:290px;background:var(--card);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.ai-panel.collapsed{width:32px;min-width:32px}
+.ai-panel.collapsed .ai-body,.ai-panel.collapsed .ai-foot,.ai-panel.collapsed .ai-hdr-cnt{display:none}
+.ai-panel.collapsed .ai-hdr{justify-content:center}
+.ai-hdr{padding:.45rem .5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.35rem}
+.ai-dot{width:7px;height:7px;border-radius:50%;background:var(--purple);box-shadow:0 0 6px rgba(167,139,250,.5);animation:aip 2s infinite;flex-shrink:0}
+@keyframes aip{0%,100%{opacity:1}50%{opacity:.4}}
+.ai-body{flex:1;overflow-y:auto;padding:.45rem;display:flex;flex-direction:column;gap:.35rem}
+.ai-foot{border-top:1px solid var(--border);padding:.3rem}
+.ai-msg{max-width:95%;padding:.4rem .55rem;border-radius:.4rem;font-size:.7rem;line-height:1.45}
+.ai-user{align-self:flex-end;background:rgba(56,189,248,.08);border:1px solid rgba(56,189,248,.1)}
+.ai-bot{align-self:flex-start;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1)}
+.ai-ev{font-size:.57rem;padding:1px 4px;border-left:2px solid var(--border);color:var(--muted);margin:1px 0}
+.ai-ev.ok{border-color:var(--green)}.ai-ev.er{border-color:var(--red)}
+/* Modals */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(2px);z-index:1000;justify-content:center;align-items:center}.mo.open{display:flex}
+.mb{background:var(--card);border:1px solid var(--border);border-radius:.5rem;padding:.9rem;width:100%;max-width:420px;max-height:86vh;overflow-y:auto}
+.mb h3{font-size:.85rem;font-weight:700;margin-bottom:.6rem}
+.ma{display:flex;justify-content:flex-end;gap:.35rem;margin-top:.6rem}
+/* Notifications */
+#notif-bar{position:fixed;bottom:.7rem;right:300px;display:flex;flex-direction:column;gap:.25rem;z-index:9999;width:250px;pointer-events:none}
+.notif{background:var(--card);border:1px solid var(--border);border-radius:.4rem;padding:.4rem .55rem;font-size:.7rem;box-shadow:0 4px 14px rgba(0,0,0,.3);animation:sIn .3s;border-left:3px solid var(--accent)}
+.notif.ok{border-left-color:var(--green)}.notif.warn{border-left-color:var(--yellow)}.notif.err{border-left-color:var(--red)}
+@keyframes sIn{from{transform:translateX(100%);opacity:0}to{transform:none;opacity:1}}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:.7rem}
+.rfi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:.5rem}
+.rfi-card{background:var(--card);border:1px solid var(--border);border-radius:.4rem;padding:.55rem;cursor:pointer;transition:border-color .12s}.rfi-card:hover{border-color:var(--accent)}
+</style>
+</head>
+<body class="auth-required">
+<div id="tg-auth-wrap" style="position:fixed;top:20px;right:20px;z-index:10000;padding:1.2rem;background:var(--card);border:2px solid var(--accent);border-radius:.6rem;display:flex;flex-direction:column;gap:.8rem;box-shadow:0 8px 32px rgba(0,0,0,.4);pointer-events:auto;width:340px;max-width:90vw">
+  <div style="font-size:.95rem;font-weight:700;color:var(--accent)">Telegram Login</div>
+  <div style="display:flex;flex-direction:column;gap:.5rem">
+    <label style="font-size:.72rem;color:var(--muted);font-weight:600">Bot username:</label>
+    <input type="text" id="tg-bot-username" placeholder="for example: my_project_bot" style="background:rgba(0,0,0,.3);border:1px solid var(--border);color:var(--text);padding:.5rem;border-radius:.3rem;font-size:.75rem;font-family:Manrope,sans-serif" />
+    <button onclick="const val = document.getElementById('tg-bot-username').value; if(val) initTelegramWidget(val); else alert('Введите имя бота')" style="background:linear-gradient(135deg,#38bdf8,#3b82f6);color:#fff;border:none;padding:.5rem;border-radius:.3rem;font-size:.75rem;font-weight:600;cursor:pointer;transition:opacity .2s">Load Widget</button>
+  </div>
+  <div id="tg-login-widget" style="min-height:50px"></div>
+  <div style="display:flex;gap:.5rem">
+    <button class="btn btn-g btn-sm" style="margin-top:.4rem" onclick="telegramDeepLinkLogin()">Open in Telegram</button>
+  </div>
+  <div id="tg-auth-status" style="font-size:.65rem;color:var(--muted);text-align:center;margin-top:.3rem">Authorize via Telegram to access dashboard</div>
+</div>
+
+<script>
+let dashboardStarted = false;
+let tgAuthUser = null;
+
+function setAuthState(isAuthorized, user = null) {
+  tgAuthUser = isAuthorized ? user : null;
+  document.body.classList.toggle('auth-required', !isAuthorized);
+  document.getElementById('tg-auth-wrap').style.display = isAuthorized ? 'none' : 'flex';
+  const st = document.getElementById('tg-auth-status');
+  if (!st) return;
+  if (isAuthorized && user) {
+    const login = user.username ? '@' + user.username : (user.first_name || 'user');
+    st.textContent = 'Authorized: ' + login;
+  } else {
+    st.textContent = 'Authorize via Telegram to access dashboard';
+  }
+}
+
+function handleAuthRequired() {
+  setAuthState(false);
+}
+
+function isLocalHostRuntime() {
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
+}
+
+async function ensureTelegramSession() {
+  try {
+    const r = await fetch('/api/auth/me', { credentials: 'same-origin' });
+    if (!r.ok) {
+      setAuthState(false);
+      return false;
+    }
+    const data = await r.json();
+    if (data.ok && data.user) {
+      setAuthState(true, data.user);
+      return true;
+    }
+    setAuthState(false);
+    return false;
+  } catch (e) {
+    console.error('Auth check failed:', e);
+    setAuthState(false);
+    return false;
+  }
+}
+
+async function telegramDeepLinkLogin() {
+  const statusEl = document.getElementById('tg-auth-status');
+  try {
+    statusEl.textContent = 'Generating one-time link...';
+    const res = await fetch('/api/auth/telegram/link', { method: 'POST', credentials: 'same-origin' });
+    const j = await res.json();
+    if (!j.ok) {
+      statusEl.textContent = j.error || 'Failed to generate login link';
+      return;
+    }
+
+    window.open(j.link, '_blank');
+    statusEl.textContent = 'Waiting for Telegram confirmation...';
+
+    const token = j.token;
+    for (let i = 0; i < 60; i++) {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const checkResp = await fetch('/api/auth/telegram/check/' + token, { credentials: 'same-origin' });
+      if (!checkResp.ok) {
+        continue;
+      }
+      const checked = await checkResp.json();
+      if (checked.ok && checked.user) {
+        setAuthState(true, checked.user);
+        startDashboardApp();
+        return;
+      }
+    }
+
+    statusEl.textContent = 'Login timeout. Try again.';
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = 'Deep-link error';
+  }
+}
+
+function initTelegramWidget(botUsername) {
+  if (isLocalHostRuntime()) {
+    const st = document.getElementById('tg-auth-status');
+    if (st) {
+      st.textContent = 'OAuth widget is disabled on localhost. Use "Open in Telegram".';
+    }
+    return;
+  }
+
+  if (!botUsername || botUsername.trim() === '') {
+    console.error('Bot username is empty');
+    return;
+  }
+
+  const cleanBot = botUsername.trim().startsWith('@') ? botUsername.trim().substring(1) : botUsername.trim();
+  const widgetContainer = document.getElementById('tg-login-widget');
+  if (!widgetContainer) return;
+
+  widgetContainer.innerHTML = '';
+
+  const script = document.createElement('script');
+  script.async = true;
+  script.src = 'https://telegram.org/js/telegram-widget.js?7';
+  script.setAttribute('data-telegram-login', cleanBot);
+  script.setAttribute('data-size', 'large');
+  script.setAttribute('data-userpic', 'true');
+  script.setAttribute('data-request-access', 'write');
+  script.setAttribute('data-callback', 'onTelegramAuth');
+  script.setAttribute('data-radius', '8');
+  script.setAttribute('data-lang', 'ru');
+
+  script.onerror = () => {
+    widgetContainer.innerHTML = '<div style="color:var(--red);font-size:.7rem">Widget loading error. Check BOT_USERNAME in config.</div>';
+  };
+
+  widgetContainer.appendChild(script);
+
+  let fb = document.getElementById('tg-fallback-btn');
+  if (!fb) {
+    fb = document.createElement('button');
+    fb.id = 'tg-fallback-btn';
+    fb.textContent = 'Login with Telegram';
+    fb.style.cssText = 'margin-top:.6rem;background:transparent;border:1px solid var(--accent);color:var(--accent);padding:.45rem .6rem;border-radius:.35rem;cursor:pointer;font-weight:700';
+    fb.onclick = () => {
+      const origin = encodeURIComponent(window.location.origin);
+      const return_to = encodeURIComponent(window.location.origin + '/tg_oauth_callback');
+      const url = `https://oauth.telegram.org/embed/${cleanBot}?origin=${origin}&return_to=${return_to}&size=large&userpic=true&request_access=write&radius=8&lang=ru`;
+      window.open(url, '_blank');
+    };
+    widgetContainer.appendChild(fb);
+  }
+}
+
+function loadBotUsername() {
+  fetch('/api/config', { credentials: 'same-origin' })
+    .then(r => r.json())
+    .then(data => {
+      if (data.bot_username) {
+        document.getElementById('tg-bot-username').value = data.bot_username;
+        if (!isLocalHostRuntime()) {
+          initTelegramWidget(data.bot_username);
+        } else {
+          const st = document.getElementById('tg-auth-status');
+          if (st) {
+            st.textContent = 'Local mode: click "Open in Telegram" to sign in.';
+          }
+        }
+      }
+    })
+    .catch(e => console.error('Config load error:', e));
+}
+
+window.onTelegramAuth = async function(user) {
+  try {
+    const response = await fetch('/api/auth/telegram', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      credentials: 'same-origin',
+      body: JSON.stringify(user)
+    });
+    const res = await response.json();
+    if (!res.ok) {
+      document.getElementById('tg-auth-status').textContent = res.error || 'Authorization error';
+      setAuthState(false);
+      return;
+    }
+
+    setAuthState(true, res.user);
+    startDashboardApp();
+  } catch (e) {
+    console.error('Auth error:', e);
+    document.getElementById('tg-auth-status').textContent = 'Server connection error';
+    setAuthState(false);
+  }
+};
+
+window.addEventListener('DOMContentLoaded', async () => {
+  loadBotUsername();
+  const isAuthed = await ensureTelegramSession();
+  if (isAuthed) {
+    startDashboardApp();
+  }
+});
+</script>
+<aside>
+<div class="logo">🏗️ Pearl PM</div>
+<nav id="nav">
+<div class="nav-item active" data-view="gantt">📊 Ганта</div>
+<div class="nav-item" data-view="network">🕸 Сетевой</div>
+<div class="nav-item" data-view="deadlines">📅 Сроки</div>
+<div class="nav-item" data-view="tasks">✅ Задачи</div>
+<div class="nav-item" data-view="zamechaniya">📋 Замечания</div>
+<div class="nav-item" data-view="changelog">📝 Журнал</div>
+<div class="nav-item" data-view="rfi">🔁 RFI</div>
+<div class="nav-item" data-view="sections">📂 Разделы</div>
+<div class="nav-sep"></div>
+<div class="nav-item" data-view="messages">💬 Telegram</div>
+<div class="nav-item" data-view="team">👥 Команда</div>
+<div class="nav-item" data-view="workload">📈 Загруженность</div>
+<div class="nav-item" data-view="votes">🗳 Голосования</div>
+<div class="nav-sep"></div>
+<div class="nav-item" data-view="settings">⚙️ Настройки</div>
+</nav>
+<div class="sidebar-bottom"><div class="conn-status"><div class="conn-dot" id="cd"></div><span id="cl">Подключение...</span></div><div style="margin-top:2px;color:var(--muted)" id="lu"></div></div>
+</aside>
+
+<main>
+<!-- ═══ GANTT ═══ -->
+<div class="view active" id="view-gantt">
+<div class="vh">
+<div><h1 id="gt">📊 Диаграмма Ганта</h1><p>Перетаскивайте полосы для изменения сроков</p></div>
+<div style="display:flex;gap:.3rem;align-items:center;flex-wrap:wrap">
+<select id="proj-sel" onchange="chgP(this.value)"></select>
+<button class="btn btn-g btn-sm" onclick="refreshG()">🔄</button>
+<button class="btn btn-p btn-sm" onclick="openM('md')">📅 Даты</button>
+<button class="btn btn-s btn-sm" onclick="openM('mproj')">+ Проект</button>
+<button class="btn btn-d btn-sm" onclick="delProject()">🗑</button>
+</div></div>
+<div style="padding:.25rem .8rem;border-bottom:1px solid var(--border);flex-shrink:0"><div class="legend">
+<i><b style="background:rgba(148,163,184,.3)"></b>Не начат</i>
+<i><b style="background:#3b82f6"></b>В работе</i>
+<i><b style="background:var(--yellow)"></b>Проверка</i>
+<i><b style="background:var(--green)"></b>Завершён</i>
+<i><b style="background:var(--red)"></b>Блокирован</i>
+</div></div>
+<div class="gantt-wrap" id="gw"><div style="padding:2rem;text-align:center;color:var(--muted)">⏳ Загрузка...</div></div>
+</div>
+
+<!-- ═══ NETWORK GRAPH ═══ -->
+<div class="view" id="view-network">
+<div class="vh"><h1>🕸 Сетевой график</h1>
+<div style="display:flex;gap:.3rem">
+<select id="net-proj-sel" onchange="loadNetwork(this.value)"></select>
+<button class="btn btn-g btn-sm" onclick="loadNetwork(cPid)">🔄</button>
+</div></div>
+<div style="flex:1;position:relative;overflow:hidden">
+<canvas id="network-canvas"></canvas>
+<div style="position:absolute;bottom:.5rem;left:.5rem;font-size:.63rem;color:var(--muted)">Тащите узлы мышкой • Прокрутка = масштаб</div>
+</div>
+</div>
+
+<!-- ═══ DEADLINES ═══ -->
+<div class="view" id="view-deadlines">
+<div class="vh"><h1>📅 Сроки</h1>
+<div style="display:flex;gap:.3rem"><select id="dl-ps" onchange="chgP(this.value)"></select><button class="btn btn-p btn-sm" onclick="openM('mdl')">+ Срок</button></div></div>
+<div class="vb"><div class="card"><table class="dt"><thead><tr><th>Подраздел</th><th>Срок</th><th>Осталось</th><th>Установил</th><th></th></tr></thead>
+<tbody id="dl-tb"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:1rem">—</td></tr></tbody></table></div></div></div>
+
+<!-- ═══ TASKS ═══ -->
+<div class="view" id="view-tasks">
+<div class="vh"><h1>✅ Задачи</h1>
+<div style="display:flex;gap:.3rem">
+<select id="task-ps" onchange="loadTasks()"></select>
+<button class="btn btn-p btn-sm" onclick="openM('mtask')">+ Задача</button>
+</div></div>
+<div class="vb">
+<div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+<div class="kpi-card kpi-blue"><div class="kpi-label">Открыто</div><div class="kpi-value" id="t-open-cnt">0</div></div>
+<div class="kpi-card kpi-red"><div class="kpi-label">Просрочено</div><div class="kpi-value" id="t-over-cnt">0</div></div>
+<div class="kpi-card kpi-green"><div class="kpi-label">Закрыто</div><div class="kpi-value" id="t-closed-cnt">0</div></div>
+</div>
+<div class="card" style="padding:0"><div id="task-list"></div></div>
+</div></div>
+
+<!-- ═══ ZAMECHANIYA ═══ -->
+<div class="view" id="view-zamechaniya">
+<div class="vh"><h1>📋 Замечания экспертизы</h1>
+<div style="display:flex;gap:.3rem">
+<select id="zam-ps" onchange="loadZam()"></select>
+<button class="btn btn-p btn-sm" onclick="openM('mzam')">+ Замечание</button>
+</div></div>
+<div class="vb">
+<div class="two-col">
+<div class="card" style="padding:0">
+<div class="card-head" style="padding:.5rem .7rem"><span class="card-title">🔴 Открытые</span><span class="badge badge-red" id="zam-open-cnt">0</span></div>
+<div id="zam-open-list"></div>
+</div>
+<div class="card" style="padding:0">
+<div class="card-head" style="padding:.5rem .7rem"><span class="card-title">✅ Устранённые</span><span class="badge badge-green" id="zam-closed-cnt">0</span></div>
+<div id="zam-closed-list"></div>
+</div>
+</div></div></div>
+
+<!-- ═══ CHANGELOG ═══ -->
+<div class="view" id="view-changelog">
+<div class="vh"><h1>📝 Журнал изменений</h1>
+<div style="display:flex;gap:.3rem">
+<select id="cl-ps" onchange="loadChangelog()"></select>
+<button class="btn btn-p btn-sm" onclick="openM('mchange')">+ Запись</button>
+</div></div>
+<div class="vb"><div class="card" style="padding:0"><div id="changelog-list"></div></div></div></div>
+
+<!-- ═══ RFI ═══ -->
+<div class="view" id="view-rfi">
+<div class="vh"><h1>🔁 RFI — Запросы информации</h1>
+<div style="display:flex;gap:.3rem"><select id="rfi-ps" onchange="loadRFI()"></select><button class="btn btn-p btn-sm" onclick="openM('mrfi')">+ RFI</button></div></div>
+<div class="vb"><div class="rfi-grid" id="rfi-grid"></div></div></div>
+
+<!-- ═══ SECTIONS ═══ -->
+<div class="view" id="view-sections">
+<div class="vh"><h1>📂 Разделы проекта</h1>
+<div style="display:flex;gap:.3rem"><select id="sec-ps" onchange="loadSections()"></select><button class="btn btn-p btn-sm" onclick="openM('msec')">+ Раздел</button></div></div>
+<div class="vb"><div id="sec-list"></div></div></div>
+
+<!-- ═══ MESSAGES (Telegram) ═══ -->
+<div class="view" id="view-messages">
+<div class="vh"><h1>💬 Telegram — Чат группы</h1>
+<div style="display:flex;gap:.3rem;align-items:center">
+<select id="msg-ps" onchange="loadMessages()"></select>
+<span class="badge badge-green" id="live-badge">● Live</span>
+</div></div>
+<div class="chat-shell">
+<div class="chat-participants">
+  <div class="chat-p-head">
+    <div style="font-size:.7rem;font-weight:700">Участники</div>
+    <input type="text" id="p-q" placeholder="Поиск по имени/@username" oninput="loadParticipantsPanel()">
+    <div style="display:flex;gap:.25rem">
+      <select id="p-source" onchange="loadParticipantsPanel()"><option value="all">Все</option><option value="telegram">Telegram</option><option value="team">Команда</option></select>
+      <select id="p-status" onchange="loadParticipantsPanel()"><option value="all">Любой статус</option><option value="creator">creator</option><option value="administrator">administrator</option><option value="member">member</option><option value="team">team</option></select>
+    </div>
+    <label style="display:flex;gap:.3rem;align-items:center;font-size:.62rem;color:var(--muted)"><input type="checkbox" id="p-only-un" onchange="loadParticipantsPanel()">Только с username</label>
+    <div style="display:flex;gap:.25rem">
+      <input type="text" id="p-pos" placeholder="Должность (для массового добавления)">
+      <button class="btn btn-g btn-sm" onclick="addParticipantsByCriteria()">+ По критерию</button>
+    </div>
+  </div>
+  <div class="chat-p-list" id="chat-p-list"></div>
+</div>
+<div class="chat-wrap">
+<div class="chat-msgs" id="chat-msgs"></div>
+<div class="chat-input">
+<input type="text" id="chat-in" placeholder="Написать в группу или @username ..." onkeydown="if(event.key==='Enter')sendToTg()">
+<button class="btn btn-p btn-sm" onclick="sendToTg()">➤ Отправить</button>
+</div>
+</div></div>
+
+<!-- ═══ TEAM ═══ -->
+<div class="view" id="view-team">
+<div class="vh"><h1>👥 Команда проекта</h1>
+<button class="btn btn-p btn-sm" onclick="openM('mmem')">+ Специалист</button></div>
+<div class="vb">
+<div style="font-size:.72rem;font-weight:600;color:var(--muted);margin-bottom:.3rem">УЧАСТНИКИ TELEGRAM ГРУППЫ</div>
+<div class="m-grid" id="tg-members-list"></div>
+<div style="font-size:.72rem;font-weight:600;color:var(--muted);margin:.5rem 0 .3rem">СПЕЦИАЛИСТЫ В БАЗЕ</div>
+<div class="m-grid" id="members-list"></div>
+</div></div>
+
+<!-- ═══ WORKLOAD ═══ -->
+<div class="view" id="view-workload">
+<div class="vh"><h1>📈 Загруженность компании</h1>
+<button class="btn btn-g btn-sm" onclick="loadWorkload()">🔄</button></div>
+<div class="vb">
+<div class="two-col">
+<div class="card">
+<div class="card-head"><span class="card-title">По специалистам</span></div>
+<div id="wl-members"></div>
+</div>
+<div class="card">
+<div class="card-head"><span class="card-title">По разделам</span></div>
+<div id="wl-sections"></div>
+</div>
+</div>
+<div class="card">
+<div class="card-head"><span class="card-title">Сводная статистика</span></div>
+<div id="wl-summary" class="two-col" style="gap:.5rem;padding-top:.4rem"></div>
+</div>
+</div></div>
+
+<!-- ═══ VOTES ═══ -->
+<div class="view" id="view-votes">
+<div class="vh"><h1>🗳 Голосования</h1>
+<div style="display:flex;gap:.3rem"><select id="vote-ps" onchange="loadVotes()"></select><button class="btn btn-p btn-sm" onclick="openM('mvote')">+ Голосование</button></div></div>
+<div class="vb"><div id="votes-list"></div></div></div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="view" id="view-settings">
+<div class="vh"><h1>⚙️ Настройки</h1></div>
+<div class="vb">
+<div class="card"><div class="card-head"><span class="card-title">Подключение к API</span></div>
+<div class="fg"><label>URL сервера</label><input type="text" id="api-i" value="http://localhost:5050"></div>
+<button class="btn btn-p btn-sm" onclick="applyUrl()">Применить</button>
+</div>
+<div class="card"><div class="card-head"><span class="card-title">AI Ассистент</span></div>
+<div class="fg"><label>Anthropic API Key</label><input type="text" id="ai-key" placeholder="sk-ant-..."></div>
+<div class="fg"><label>Модель</label>
+<select id="ai-model-sel">
+<option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+<option value="claude-haiku-4-5-20251001">Claude Haiku 4.5</option>
+<option value="claude-opus-4-20250514">Claude Opus 4</option>
+</select></div>
+<button class="btn btn-p btn-sm" onclick="saveAiSettings()">💾 Сохранить</button>
+</div>
+<div class="card"><div class="card-head"><span class="card-title">Статус системы</span></div>
+<div id="sys-status" style="font-size:.72rem;line-height:2;color:var(--muted)">Проверка...</div>
+</div>
+</div></div>
+</main>
+
+<!-- AI Sidebar -->
+<div class="ai-panel" id="ai-panel">
+<div class="ai-hdr">
+<div class="ai-dot"></div>
+<div class="ai-hdr-cnt" style="flex:1">
+<div style="font-size:.72rem;font-weight:700">AI Ассистент</div>
+<div style="font-size:.6rem;color:var(--muted)" id="ai-prov-lbl">Anthropic</div>
+</div>
+<button class="btn btn-g btn-sm" onclick="toggleAI()" id="ai-tog">◀</button>
+</div>
+<div class="ai-body" id="ai-body">
+<div class="ai-ev ok">Готов к работе</div>
+<div style="display:flex;gap:.25rem;flex-wrap:wrap;margin-top:.2rem">
+<button onclick="aiQ('Статус проекта')" style="padding:2px 6px;font-size:.58rem;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1);color:var(--purple);border-radius:8px;cursor:pointer">Статус проекта</button>
+<button onclick="aiQ('Что просрочено?')" style="padding:2px 6px;font-size:.58rem;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1);color:var(--purple);border-radius:8px;cursor:pointer">Просрочено?</button>
+<button onclick="aiQ('Подготовь отчёт')" style="padding:2px 6px;font-size:.58rem;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1);color:var(--purple);border-radius:8px;cursor:pointer">Отчёт</button>
+<button onclick="aiQ('Кто загружен?')" style="padding:2px 6px;font-size:.58rem;background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.1);color:var(--purple);border-radius:8px;cursor:pointer">Загруженность</button>
+</div>
+</div>
+<div class="ai-foot">
+<div style="display:flex;gap:.25rem">
+<input type="text" id="ai-in" placeholder="Спросите AI..." style="flex:1;font-size:.7rem;padding:3px 5px" onkeydown="if(event.key==='Enter')sendAI()">
+<button class="btn btn-p" style="padding:3px 7px;font-size:.63rem" onclick="sendAI()">➤</button>
+</div>
+</div>
+</div>
+
+<div id="notif-bar"></div>
+
+<!-- Modals -->
+<div class="mo" id="md"><div class="mb"><h3>📅 Даты проекта</h3>
+<div class="fg"><label>Начало</label><input type="date" id="m-sd"></div>
+<div class="fg"><label>Дедлайн</label><input type="date" id="m-ed"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('md')">Отмена</button><button class="btn btn-p btn-sm" onclick="saveDates()">💾</button></div></div></div>
+
+<div class="mo" id="mproj"><div class="mb"><h3>🏗 Новый проект</h3>
+<div class="fg"><label>Название</label><input type="text" id="mp-n" placeholder="Жилой комплекс «Навоий»"></div>
+<div class="fr"><div class="fg"><label>Начало</label><input type="date" id="mp-sd"></div>
+<div class="fg"><label>Дедлайн</label><input type="date" id="mp-ed"></div></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mproj')">Отмена</button><button class="btn btn-p btn-sm" onclick="createProject()">Создать</button></div></div></div>
+
+<div class="mo" id="mdl"><div class="mb"><h3>📅 Установить срок</h3>
+<div class="fg"><label>Код подраздела</label><input type="text" id="mdl-c" placeholder="АР_01"></div>
+<div class="fg"><label>Дата</label><input type="date" id="mdl-d"></div>
+<div class="fg"><label>Причина</label><textarea id="mdl-r"></textarea></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mdl')">Отмена</button><button class="btn btn-p btn-sm" onclick="saveDL()">Установить</button></div></div></div>
+
+<div class="mo" id="msec"><div class="mb"><h3>📂 Раздел</h3>
+<div class="fg"><label>Код</label><input type="text" id="ms-c" placeholder="АР"></div>
+<div class="fg"><label>Название</label><input type="text" id="ms-n" placeholder="Архитектурные решения"></div>
+<div class="fg"><label>Шаблон</label><select id="ms-t"><option value="">Пустой</option>
+<option value="АР">АР — Архитектура (5 подразделов)</option><option value="КЖ">КЖ — Конструкции (4)</option>
+<option value="КМ">КМ — Металл (2)</option><option value="ОВ">ОВ — ОВиК (3)</option>
+<option value="ВК">ВК — Водоснабжение (3)</option><option value="ЭО">ЭО — Электро (3)</option>
+<option value="СС">СС — Слаботочные (3)</option><option value="ГП">ГП — Генплан (2)</option></select></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('msec')">Отмена</button><button class="btn btn-p btn-sm" onclick="addSec()">Добавить</button></div></div></div>
+
+<div class="mo" id="msub"><div class="mb"><h3>➕ Подраздел</h3>
+<input type="hidden" id="msub-sc">
+<div class="fg"><label>Код</label><input type="text" id="msub-c"></div>
+<div class="fg"><label>Название</label><input type="text" id="msub-n"></div>
+<div class="fg"><label>Длительность (дней)</label><input type="text" id="msub-d" value="10"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('msub')">Отмена</button><button class="btn btn-p btn-sm" onclick="addSub()">Добавить</button></div></div></div>
+
+<div class="mo" id="mmem"><div class="mb"><h3>👤 Специалист</h3>
+<div class="fg"><label>ФИО</label><input type="text" id="mm-n"></div>
+<div class="fg"><label>Telegram @username или ID</label><input type="text" id="mm-tg"></div>
+<div class="fg"><label>Должность</label><input type="text" id="mm-pos"></div>
+<div class="fr"><div class="fg"><label>Телефон</label><input type="tel" id="mm-ph"></div>
+<div class="fg"><label>Email</label><input type="email" id="mm-em"></div></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mmem')">Отмена</button><button class="btn btn-p btn-sm" onclick="addMem()">Добавить</button></div></div></div>
+
+<div class="mo" id="mrfi"><div class="mb"><h3>🔁 RFI</h3>
+<div class="fg"><label>Описание запроса</label><textarea id="mrfi-t"></textarea></div>
+<div class="fg"><label>Срок</label><input type="date" id="mrfi-d"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mrfi')">Отмена</button><button class="btn btn-p btn-sm" onclick="createRFI()">Создать</button></div></div></div>
+
+<div class="mo" id="mtask"><div class="mb"><h3>✅ Создать задачу</h3>
+<div class="fg"><label>Название</label><input type="text" id="mt-title"></div>
+<div class="fr"><div class="fg"><label>Ответственный</label><input type="text" id="mt-resp"></div>
+<div class="fg"><label>Раздел</label><input type="text" id="mt-sec" placeholder="КЖ"></div></div>
+<div class="fr"><div class="fg"><label>Срок</label><input type="date" id="mt-dl"></div>
+<div class="fg"><label>Приоритет</label><select id="mt-pr"><option value="normal">Обычный</option><option value="high">Высокий 🔥</option><option value="low">Низкий</option></select></div></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mtask')">Отмена</button><button class="btn btn-p btn-sm" onclick="createTask()">Создать</button></div></div></div>
+
+<div class="mo" id="mzam"><div class="mb"><h3>📋 Замечание экспертизы</h3>
+<div class="fg"><label>Описание</label><textarea id="mz-desc"></textarea></div>
+<div class="fr"><div class="fg"><label>Раздел</label><input type="text" id="mz-sec" placeholder="КЖ"></div>
+<div class="fg"><label>Ответственный</label><input type="text" id="mz-resp"></div></div>
+<div class="fg"><label>Источник</label><input type="text" id="mz-src" value="экспертиза"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mzam')">Отмена</button><button class="btn btn-p btn-sm" onclick="createZam()">Добавить</button></div></div></div>
+
+<div class="mo" id="mchange"><div class="mb"><h3>📝 Запись в журнал</h3>
+<div class="fg"><label>Описание изменения</label><textarea id="mc-desc"></textarea></div>
+<div class="fr"><div class="fg"><label>Раздел</label><input type="text" id="mc-sec"></div>
+<div class="fg"><label>Автор</label><input type="text" id="mc-auth" value="ГИП"></div></div>
+<div class="fg"><label>Влияние</label><input type="text" id="mc-imp"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mchange')">Отмена</button><button class="btn btn-p btn-sm" onclick="createChange()">Добавить</button></div></div></div>
+
+<div class="mo" id="mvote"><div class="mb"><h3>🗳 Голосование</h3>
+<div class="fg"><label>Предложение</label><textarea id="mv-prop" placeholder="Изменить сечение колонн с 400×400 до 500×500 мм"></textarea></div>
+<div class="fg"><label>Автор</label><input type="text" id="mv-auth" value="ГИП"></div>
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mvote')">Отмена</button><button class="btn btn-p btn-sm" onclick="createVote()">Запустить</button></div></div></div>
+
+<div class="mo" id="mbar"><div class="mb"><h3 id="bar-title">Подраздел</h3>
+<div class="fg"><label>Статус</label><select id="bar-status">
+<option value="not_started">Не начат</option><option value="in_progress">В работе</option>
+<option value="on_review">На проверке</option><option value="completed">Завершён</option>
+<option value="blocked">Заблокирован</option></select></div>
+<div class="fg"><label>Прогресс %</label><input type="text" id="bar-prog"></div>
+<div class="fg"><label>Ответственный</label><input type="text" id="bar-asgn"></div>
+<div class="fg"><label>Начало (день)</label><input type="text" id="bar-sd"></div>
+<div class="fg"><label>Длительность (дней)</label><input type="text" id="bar-dur"></div>
+<input type="hidden" id="bar-id">
+<div class="ma"><button class="btn btn-g btn-sm" onclick="closeM('mbar')">Отмена</button><button class="btn btn-p btn-sm" onclick="saveBar()">💾 Сохранить</button></div></div></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// PEARL PM DASHBOARD — UNIFIED v1
+// ═══════════════════════════════════════════════════════
+let API = window.location.origin;
+let cPid = null, projs = [], gData = null;
+let dragState = null; // для drag Ганта
+
+// ─── API helper ───────────────────────────────────────
+async function ap(url, opts = {}) {
+  opts.headers = {
+    'Content-Type': 'application/json',
+    ...(opts.headers || {})
+  };
+
+  const response = await fetch(url, {
+    ...opts,
+    credentials: 'same-origin'
+  });
+
+  if (response.status === 401) {
+    handleAuthRequired();
+    throw new Error('Unauthorized');
+  }
+
+  if (!response.ok) {
+    const text = await response.text();
+    console.error('API ERROR:', text);
+    throw new Error(text);
+  }
+
+  return response.json();
+}
+
+// ─── Notifications ────────────────────────────────────
+function ntf(msg, type = 'info') {
+  const bar = document.getElementById('notif-bar');
+  const el = document.createElement('div');
+  el.className = 'notif ' + type;
+  el.textContent = msg;
+  bar.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ─── Modal ────────────────────────────────────────────
+function openM(id) { document.getElementById(id).classList.add('open'); }
+function closeM(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.mo').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
+
+// ─── Navigation ───────────────────────────────────────
+function swV(name) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const v = document.getElementById('view-' + name);
+  if (v) v.classList.add('active');
+  document.querySelectorAll(`[data-view="${name}"]`).forEach(n => n.classList.add('active'));
+  // Lazy load
+  const loaders = { deadlines: loadDL, tasks: loadTasks, zamechaniya: loadZam, changelog: loadChangelog, rfi: loadRFI, sections: loadSections, messages: loadMessagesView, team: loadTeam, workload: loadWorkload, votes: loadVotes, network: () => loadNetwork(cPid), settings: checkStatus };
+  if (loaders[name]) loaders[name]();
+}
+document.querySelectorAll('.nav-item[data-view]').forEach(n => n.addEventListener('click', () => swV(n.dataset.view)));
+
+// ─── Projects ─────────────────────────────────────────
+async function loadProjects() {
+  projs = await ap('/api/projects');
+  if (!Array.isArray(projs)) { projs = []; return; }
+  ['proj-sel','dl-ps','task-ps','zam-ps','cl-ps','rfi-ps','sec-ps','msg-ps','net-proj-sel','vote-ps'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const cur = el.value;
+    el.innerHTML = projs.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+    if (cur) el.value = cur;
+  });
+  if (projs.length && !cPid) { cPid = projs[0].id; refreshG(); }
+  updateConnStatus(true);
+}
+
+async function chgP(val) {
+  cPid = parseInt(val);
+  ['proj-sel','dl-ps','task-ps','zam-ps','cl-ps','rfi-ps','sec-ps','msg-ps','net-proj-sel','vote-ps'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value !== String(cPid)) el.value = cPid;
+  });
+  refreshG();
+}
+
+async function createProject() {
+  const createBtn = document.querySelector("#mproj .btn.btn-p.btn-sm");
+  if (createBtn?.dataset.busy === '1') return;
+  const name = document.getElementById('mp-n').value.trim();
+  const sd = document.getElementById('mp-sd').value;
+  const ed = document.getElementById('mp-ed').value;
+  if (!name) return ntf('Введите название', 'warn');
+  if (createBtn) {
+    createBtn.dataset.busy = '1';
+    createBtn.disabled = true;
+  }
+  try {
+    await ap('/api/projects/sync', { method: 'POST', body: JSON.stringify({ name, start_date: sd, end_date: ed }) });
+    closeM('mproj');
+    ntf('✅ Проект создан', 'ok');
+    await loadProjects();
+  } finally {
+    if (createBtn) {
+      createBtn.dataset.busy = '0';
+      createBtn.disabled = false;
+    }
+  }
+}
+
+async function delProject() {
+  if (!cPid || !confirm('Удалить проект?')) return;
+  await ap('/api/projects/' + cPid, { method: 'DELETE' });
+  cPid = null; gData = null;
+  document.getElementById('gw').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Выберите проект</div>';
+  await loadProjects();
+  ntf('Проект удалён');
+}
+
+async function saveDates() {
+  const sd = document.getElementById('m-sd').value;
+  const ed = document.getElementById('m-ed').value;
+  if (cPid) await ap('/api/projects/' + cPid + '/dates', { method: 'POST', body: JSON.stringify({ start_date: sd, end_date: ed }) });
+  closeM('md'); refreshG();
+}
+
+// ─── Gantt ────────────────────────────────────────────
+async function refreshG() {
+  if (!cPid) return;
+  try {
+    gData = await ap('/api/projects/' + cPid + '/gantt');
+    if (!gData || !gData.project) return;
+    renderGantt(gData);
+    document.getElementById('gt').textContent = '📊 ' + gData.project.name;
+  } catch(e) { console.error(e); }
+}
+
+const COLORS = { not_started: 'rgba(148,163,184,.15)', in_progress: '#3b82f6', on_review: '#eab308', completed: '#22c55e', blocked: '#ef4444' };
+
+function renderGantt(data) {
+  const { project, sections, items } = data;
+  if (!items.length) {
+    document.getElementById('gw').innerHTML = '<div style="padding:2rem;text-align:center;color:var(--muted)">Нет данных. Добавьте разделы в «📂 Разделы»</div>';
+    return;
+  }
+
+  // Timeline setup
+  const startDate = project.start_date ? new Date(project.start_date) : new Date();
+  const totalDays = Math.max(...items.map(i => (i.start_day || 0) + (i.duration || 10)), 60);
+  const PX = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--px-day')) || 36;
+
+  // Header
+  let hdrHtml = `<div class="g-hdr"><div class="g-lbl-h">Раздел / Подраздел</div><div class="g-tl-h">`;
+  let d = new Date(startDate);
+  const DAYS = ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+  const MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+  for (let i = 0; i < totalDays; i++) {
+    const isMS = d.getDate() === 1;
+    hdrHtml += `<div class="g-dc${isMS ? ' ms' : ''}"><div class="dn">${d.getDate()}${isMS ? ' ' + MONTHS[d.getMonth()] : ''}</div><div class="dw">${DAYS[d.getDay()]}</div></div>`;
+    d.setDate(d.getDate() + 1);
+  }
+  hdrHtml += '</div></div>';
+
+  // Today line
+  const todayDay = Math.round((new Date() - startDate) / 86400000);
+  const deadlineMap = {};
+  if (gData.deadlines) gData.deadlines.forEach(dl => { deadlineMap[dl.subsection_code] = dl.deadline_date; });
+
+  // Rows
+  let rowsHtml = '';
+  for (const sec of sections) {
+    rowsHtml += `<div class="g-row sec"><div class="g-rl i1">📂 ${sec.code} — ${sec.name}</div><div class="g-tl" style="width:${totalDays*PX}px;position:relative">`;
+    if (todayDay >= 0 && todayDay < totalDays) rowsHtml += `<div class="today-l" style="left:${todayDay*PX}px"></div>`;
+    rowsHtml += '</div></div>';
+    if (!sec.subsections) continue;
+    for (const sub of sec.subsections) {
+      const left = (sub.start_day || 0) * PX;
+      const w = Math.max((sub.duration || 10) * PX, 5);
+      const clr = COLORS[sub.status] || COLORS.not_started;
+      const prog = sub.progress || 0;
+      const dl = deadlineMap[sub.code];
+      const dlLeft = dl ? Math.round((new Date(dl) - startDate) / 86400000) * PX : null;
+
+      rowsHtml += `<div class="g-row"><div class="g-rl i2" onclick="openBarModal(${sub.id})" title="${sub.name}">${sub.code} — ${sub.name}</div>`;
+      rowsHtml += `<div class="g-tl" style="width:${totalDays*PX}px;position:relative">`;
+      if (todayDay >= 0 && todayDay < totalDays) rowsHtml += `<div class="today-l" style="left:${todayDay*PX}px"></div>`;
+      if (dlLeft !== null) rowsHtml += `<div class="g-ddl" style="left:${dlLeft}px" title="Дедлайн: ${dl}"></div>`;
+      rowsHtml += `<div class="g-bar ${sub.status}" style="left:${left}px;width:${w}px;background:${clr}" 
+        data-id="${sub.id}" data-start="${sub.start_day||0}" data-dur="${sub.duration||10}"
+        onmousedown="startDrag(event,${sub.id})" ondblclick="openBarModal(${sub.id})" title="${sub.name} (${prog}%)">`;
+      if (prog > 0) rowsHtml += `<div style="position:absolute;left:0;top:0;height:100%;width:${prog}%;background:rgba(255,255,255,.2);border-radius:6px;pointer-events:none"></div>`;
+      rowsHtml += `<div class="g-bar-resize" onmousedown="startResize(event,${sub.id})"></div></div>`;
+      rowsHtml += '</div></div>';
+    }
+  }
+
+  document.getElementById('gw').innerHTML = hdrHtml + rowsHtml;
+}
+
+// ─── Drag & Drop Ганта ────────────────────────────────
+function startDrag(e, subId) {
+  if (e.target.classList.contains('g-bar-resize')) return;
+  e.preventDefault();
+  const bar = e.currentTarget;
+  const PX = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--px-day')) || 36;
+  const startX = e.clientX;
+  const origLeft = parseInt(bar.style.left) || 0;
+  const origStart = parseInt(bar.dataset.start) || 0;
+
+  dragState = { bar, startX, origLeft, origStart, PX, mode: 'move', subId };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+}
+
+function startResize(e, subId) {
+  e.stopPropagation(); e.preventDefault();
+  const bar = e.currentTarget.parentElement;
+  const PX = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--px-day')) || 36;
+  const startX = e.clientX;
+  const origW = parseInt(bar.style.width) || 100;
+  const origDur = parseInt(bar.dataset.dur) || 10;
+
+  dragState = { bar, startX, origW, origDur, PX, mode: 'resize', subId };
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', endDrag);
+}
+
+function onDrag(e) {
+  if (!dragState) return;
+  const { bar, startX, PX, mode } = dragState;
+  const dx = e.clientX - startX;
+  if (mode === 'move') {
+    const newLeft = Math.max(0, dragState.origLeft + dx);
+    bar.style.left = newLeft + 'px';
+  } else {
+    const newW = Math.max(PX, dragState.origW + dx);
+    bar.style.width = newW + 'px';
+  }
+}
+
+async function endDrag(e) {
+  if (!dragState) return;
+  const { bar, PX, mode, subId, origStart, origDur } = dragState;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', endDrag);
+
+  let body = {};
+  if (mode === 'move') {
+    const newLeft = parseInt(bar.style.left) || 0;
+    const newStart = Math.round(newLeft / PX);
+    if (newStart !== origStart) { body = { start_day: newStart }; bar.dataset.start = newStart; }
+  } else {
+    const newW = parseInt(bar.style.width) || PX;
+    const newDur = Math.max(1, Math.round(newW / PX));
+    if (newDur !== origDur) { body = { duration: newDur }; bar.dataset.dur = newDur; }
+    bar.style.width = (newDur * PX) + 'px';
+  }
+
+  if (Object.keys(body).length) {
+    await ap('/api/subsections/' + subId, { method: 'PATCH', body: JSON.stringify(body) });
+    ntf('💾 Сохранено', 'ok');
+  }
+  dragState = null;
+}
+
+// ─── Bar modal ────────────────────────────────────────
+function openBarModal(subId) {
+  const item = gData?.items?.find(i => i.id === subId);
+  if (!item) return;
+  document.getElementById('bar-id').value = subId;
+  document.getElementById('bar-title').textContent = item.code + ' — ' + item.name;
+  document.getElementById('bar-status').value = item.status || 'not_started';
+  document.getElementById('bar-prog').value = item.progress || 0;
+  document.getElementById('bar-asgn').value = item.assignee || '';
+  document.getElementById('bar-sd').value = item.start_day || 0;
+  document.getElementById('bar-dur').value = item.duration || 10;
+  openM('mbar');
+}
+
+async function saveBar() {
+  const id = document.getElementById('bar-id').value;
+  const body = {
+    status: document.getElementById('bar-status').value,
+    progress: parseInt(document.getElementById('bar-prog').value) || 0,
+    assignee: document.getElementById('bar-asgn').value,
+    start_day: parseInt(document.getElementById('bar-sd').value) || 0,
+    duration: parseInt(document.getElementById('bar-dur').value) || 10,
+  };
+  await ap('/api/subsections/' + id, { method: 'PATCH', body: JSON.stringify(body) });
+  closeM('mbar'); ntf('✅ Сохранено', 'ok'); refreshG();
+}
+
+// ─── Deadlines ────────────────────────────────────────
+async function loadDL() {
+  if (!cPid) return;
+  const dls = await ap('/api/deadlines/' + cPid);
+  const today = new Date();
+  const tb = document.getElementById('dl-tb');
+  if (!dls.length) { tb.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:1rem">Нет дедлайнов</td></tr>'; return; }
+  tb.innerHTML = dls.map(d => {
+    const dl = new Date(d.deadline_date);
+    const diff = Math.round((dl - today) / 86400000);
+    const clr = diff < 0 ? 'var(--red)' : diff < 7 ? 'var(--yellow)' : 'var(--green)';
+    const left = diff < 0 ? `⚠️ ${Math.abs(diff)} дн. назад` : diff === 0 ? '🔥 Сегодня' : `${diff} дн.`;
+    return `<tr><td><b>${d.subsection_code||'—'}</b>${d.sub_name ? ' — '+d.sub_name : ''}</td>
+    <td>${fmtDate(d.deadline_date)}</td><td style="color:${clr}">${left}</td>
+    <td style="color:var(--muted)">${d.set_by||'—'}</td>
+    <td><button class="btn btn-g btn-sm" onclick="editDL(${d.id},'${d.deadline_date||''}','${d.subsection_code||''}')">✏️</button></td></tr>`;
+  }).join('');
+}
+
+async function saveDL() {
+  const c = document.getElementById('mdl-c').value.trim();
+  const d = document.getElementById('mdl-d').value;
+  if (!c || !d) return ntf('Заполните поля', 'warn');
+  await ap('/api/deadlines', { method: 'POST', body: JSON.stringify({ project_id: cPid, subsection_code: c, deadline_date: d, change_reason: document.getElementById('mdl-r').value }) });
+  closeM('mdl'); ntf('✅', 'ok'); loadDL(); refreshG();
+}
+
+function editDL(id, date, code) {
+  document.getElementById('mdl-c').value = code;
+  document.getElementById('mdl-d').value = date ? date.substring(0,10) : '';
+  document.getElementById('mdl-r').value = 'Изменение срока';
+  openM('mdl');
+}
+
+// ─── Sections ────────────────────────────────────────
+const TPL = {
+  'АР':{n:'Архитектурные решения',s:[{c:'АР_01',n:'Пояснительная записка',d:5},{c:'АР_02',n:'Поэтажные планы',d:12},{c:'АР_03',n:'Фасады и разрезы',d:10},{c:'АР_04',n:'Узлы и детали',d:8},{c:'АР_05',n:'Спецификации',d:5}]},
+  'КЖ':{n:'Конструкции ЖБ',s:[{c:'КЖ_01',n:'Расчётная схема',d:10},{c:'КЖ_02',n:'Фундаменты',d:12},{c:'КЖ_03',n:'Монолитный каркас',d:15},{c:'КЖ_04',n:'Армирование',d:8}]},
+  'КМ':{n:'Металлоконструкции',s:[{c:'КМ_01',n:'Расчёт МК',d:10},{c:'КМ_02',n:'Чертежи КМД',d:12}]},
+  'ОВ':{n:'Отопление/вентиляция',s:[{c:'ОВ_01',n:'Теплопотери',d:10},{c:'ОВ_02',n:'Вентиляция',d:12},{c:'ОВ_03',n:'Спецификации',d:5}]},
+  'ВК':{n:'Водоснабжение/канализация',s:[{c:'ВК_01',n:'Водоснабжение',d:8},{c:'ВК_02',n:'Канализация',d:8},{c:'ВК_03',n:'Наружные сети',d:10}]},
+  'ЭО':{n:'Электроснабжение',s:[{c:'ЭО_01',n:'Силовое электро',d:10},{c:'ЭО_02',n:'Освещение',d:8},{c:'ЭО_03',n:'ГРЩ/ВРУ',d:6}]},
+  'СС':{n:'Слаботочные системы',s:[{c:'СС_01',n:'СКУД',d:7},{c:'СС_02',n:'Видеонаблюдение',d:7},{c:'СС_03',n:'СПС/СОУЭ',d:8}]},
+  'ГП':{n:'Генеральный план',s:[{c:'ГП_01',n:'Ситуационный план',d:5},{c:'ГП_02',n:'Благоустройство',d:8}]},
+};
+
+async function addSec() {
+  const code = document.getElementById('ms-c').value.trim().toUpperCase();
+  const tpl = document.getElementById('ms-t').value;
+  let name = document.getElementById('ms-n').value.trim();
+  if (!code) return ntf('Введите код', 'warn');
+  const t = TPL[tpl || code];
+  if (t && !name) name = t.n;
+  if (!name) name = code;
+  const subs = (t && tpl) ? t.s : [];
+  await ap('/api/sections', { method: 'POST', body: JSON.stringify({ project_id: cPid, code, name, subsections: subs }) });
+  closeM('msec'); ntf('✅ Раздел добавлен', 'ok'); loadSections(); refreshG();
+}
+
+async function addSub() {
+  const secId = document.getElementById('msub-sc').value;
+  const code = document.getElementById('msub-c').value.trim();
+  const name = document.getElementById('msub-n').value.trim();
+  const dur = parseInt(document.getElementById('msub-d').value) || 10;
+  if (!code || !name) return ntf('Заполните поля', 'warn');
+  await ap('/api/subsections', { method: 'POST', body: JSON.stringify({ section_id: parseInt(secId), code, name, duration: dur }) });
+  closeM('msub'); ntf('✅', 'ok'); loadSections(); refreshG();
+}
+
+async function loadSections() {
+  if (!cPid) return;
+  const data = await ap('/api/projects/' + cPid + '/gantt');
+  const el = document.getElementById('sec-list');
+  if (!data || !data.sections?.length) { el.innerHTML = '<div style="padding:1rem;color:var(--muted);text-align:center">Нет разделов. Добавьте первый раздел.</div>'; return; }
+  el.innerHTML = data.sections.map(sec => `
+  <div class="card" style="margin-bottom:.5rem">
+    <div class="card-head">
+      <span class="card-title">📂 ${sec.code} — ${sec.name}</span>
+      <div style="display:flex;gap:.3rem">
+        <button class="btn btn-g btn-sm" onclick="openAddSub(${sec.id},'${sec.code}')">+ Подраздел</button>
+        <button class="btn btn-d btn-sm" onclick="delSec(${sec.id})">🗑</button>
+      </div>
+    </div>
+    ${sec.subsections?.length ? `<div>${sec.subsections.map(s => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:.3rem .5rem;border-top:1px solid var(--border);font-size:.72rem">
+        <span style="color:var(--muted)">${s.code} — ${s.name}</span>
+        <span class="badge badge-${s.status==='completed'?'green':s.status==='in_progress'?'blue':s.status==='blocked'?'red':'yellow'}">${s.status}</span>
+      </div>`).join('')}</div>` : '<div style="padding:.3rem .5rem;font-size:.68rem;color:var(--muted)">Нет подразделов</div>'}
+  </div>`).join('');
+}
+
+function openAddSub(secId, secCode) {
+  document.getElementById('msub-sc').value = secId;
+  document.getElementById('msub-c').value = secCode + '_';
+  document.getElementById('msub-n').value = '';
+  openM('msub');
+}
+
+async function delSec(sid) {
+  if (!confirm('Удалить раздел?')) return;
+  await ap('/api/sections/' + sid, { method: 'DELETE' });
+  ntf('Удалено'); loadSections(); refreshG();
+}
+
+// ─── Tasks ────────────────────────────────────────────
+async function loadTasks() {
+  const pid = document.getElementById('task-ps')?.value || cPid;
+  const [open, closed] = await Promise.all([ap(`/api/tasks?project_id=${pid}&status=open`), ap(`/api/tasks?project_id=${pid}&status=closed`)]);
+  const today = new Date();
+  const overdue = open.filter(t => t.deadline && new Date(t.deadline) < today);
+  document.getElementById('t-open-cnt').textContent = open.length;
+  document.getElementById('t-over-cnt').textContent = overdue.length;
+  document.getElementById('t-closed-cnt').textContent = closed.length;
+  const el = document.getElementById('task-list');
+  const all = [...open, ...closed];
+  if (!all.length) { el.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted)">Нет задач</div>'; return; }
+  el.innerHTML = all.map(t => {
+    const dl = t.deadline ? new Date(t.deadline) : null;
+    const over = dl && dl < today && t.status === 'open';
+    const dotClr = t.status==='closed'?'var(--green)':over?'var(--red)':'var(--accent)';
+    return `<div class="task-item">
+      <div class="t-dot" style="background:${dotClr}"></div>
+      <div class="t-body">
+        <div class="t-title">${t.status==='closed'?'<s>':''}<b>#${t.id}</b> ${esc(t.title)}${t.status==='closed'?'</s>':''}</div>
+        <div class="t-meta">
+          ${t.section?`<span class="t-sec">${esc(t.section)}</span>`:''}
+          <span>👤 ${esc(t.responsible||'—')}</span>
+          <span style="color:${over?'var(--red)':'var(--muted)'}">📅 ${fmtDate(t.deadline)}${over?' ⚠️':''}</span>
+        </div>
+      </div>
+      ${t.status==='open'?`<button class="btn btn-s btn-sm" onclick="closeTaskD(${t.id})">✓</button>`:''}
+    </div>`;
+  }).join('');
+}
+
+async function createTask() {
+  const pid = document.getElementById('task-ps')?.value || cPid;
+  const body = { project_id: parseInt(pid)||1, title: document.getElementById('mt-title').value.trim(),
+    responsible: document.getElementById('mt-resp').value.trim(), section: document.getElementById('mt-sec').value.trim(),
+    deadline: document.getElementById('mt-dl').value, priority: document.getElementById('mt-pr').value };
+  if (!body.title) return ntf('Введите название', 'warn');
+  await ap('/api/tasks', { method: 'POST', body: JSON.stringify(body) });
+  closeM('mtask'); ntf('✅ Задача создана', 'ok'); loadTasks();
+}
+
+async function closeTaskD(id) {
+  await ap('/api/tasks/' + id + '/close', { method: 'POST' });
+  ntf('✅ Закрыто', 'ok'); loadTasks();
+}
+
+// ─── Zamechaniya ──────────────────────────────────────
+async function loadZam() {
+  const pid = document.getElementById('zam-ps')?.value || cPid;
+  const [open, closed] = await Promise.all([ap(`/api/zamechaniya?project_id=${pid}&status=open`), ap(`/api/zamechaniya?project_id=${pid}&status=closed`)]);
+  document.getElementById('zam-open-cnt').textContent = open.length;
+  document.getElementById('zam-closed-cnt').textContent = closed.length;
+  const renderList = (items, closed) => items.length ? items.map(z => `
+    <div class="task-item">
+      <div class="t-dot" style="background:${closed?'var(--green)':'var(--red)'}"></div>
+      <div class="t-body">
+        <div class="t-title"><b>#${z.id}</b> ${esc(z.description)}</div>
+        <div class="t-meta"><span class="t-sec">${esc(z.section||'—')}</span><span>👤 ${esc(z.responsible||'—')}</span><span>${fmtDate(z.created_at)}</span></div>
+      </div>
+      ${!closed?`<button class="btn btn-s btn-sm" onclick="closeZamD(${z.id})">✓</button>`:''}
+    </div>`).join('') : '<div style="padding:1rem;text-align:center;color:var(--muted)">Нет</div>';
+  document.getElementById('zam-open-list').innerHTML = renderList(open, false);
+  document.getElementById('zam-closed-list').innerHTML = renderList(closed, true);
+}
+
+async function createZam() {
+  const pid = document.getElementById('zam-ps')?.value || cPid;
+  const body = { project_id: parseInt(pid)||1, description: document.getElementById('mz-desc').value.trim(),
+    section: document.getElementById('mz-sec').value.trim(), responsible: document.getElementById('mz-resp').value.trim(),
+    source: document.getElementById('mz-src').value.trim() };
+  if (!body.description) return ntf('Введите описание', 'warn');
+  await ap('/api/zamechaniya', { method: 'POST', body: JSON.stringify(body) });
+  closeM('mzam'); ntf('✅', 'ok'); loadZam();
+}
+
+async function closeZamD(id) {
+  await ap('/api/zamechaniya/' + id + '/close', { method: 'POST' });
+  ntf('✅ Закрыто', 'ok'); loadZam();
+}
+
+// ─── Changelog ────────────────────────────────────────
+async function loadChangelog() {
+  const pid = document.getElementById('cl-ps')?.value || cPid;
+  const data = await ap('/api/changes' + (pid ? '?project_id='+pid : ''));
+  const el = document.getElementById('changelog-list');
+  if (!data.length) { el.innerHTML = '<div style="padding:1rem;text-align:center;color:var(--muted)">Журнал пуст</div>'; return; }
+  el.innerHTML = data.map(c => `
+    <div style="display:flex;gap:.8rem;padding:.55rem .7rem;border-bottom:1px solid rgba(255,255,255,.02)">
+      <div style="font-size:.63rem;color:var(--muted);white-space:nowrap;padding-top:2px;min-width:70px">${fmtDate(c.created_at)}</div>
+      <div style="flex:1">
+        <div style="font-size:.74rem">${esc(c.description)}</div>
+        <div style="font-size:.63rem;color:var(--muted);margin-top:2px">[${esc(c.section||'—')}] · ${esc(c.author||'—')}${c.impact?' · '+esc(c.impact):''}</div>
+      </div>
+    </div>`).join('');
+}
+
+async function createChange() {
+  const pid = document.getElementById('cl-ps')?.value || cPid;
+  const body = { project_id: parseInt(pid)||1, description: document.getElementById('mc-desc').value.trim(),
+    section: document.getElementById('mc-sec').value, author: document.getElementById('mc-auth').value,
+    impact: document.getElementById('mc-imp').value };
+  if (!body.description) return ntf('Введите описание', 'warn');
+  await ap('/api/changes', { method: 'POST', body: JSON.stringify(body) });
+  closeM('mchange'); ntf('✅', 'ok'); loadChangelog();
+}
+
+// ─── RFI ─────────────────────────────────────────────
+async function loadRFI() {
+  const pid = document.getElementById('rfi-ps')?.value || cPid;
+  const data = await ap('/api/rfi?project_id=' + (pid||1));
+  const el = document.getElementById('rfi-grid');
+  if (!data.length) { el.innerHTML = '<div style="color:var(--muted)">Нет RFI</div>'; return; }
+  el.innerHTML = data.map(r => `
+    <div class="rfi-card">
+      <div style="font-size:.64rem;color:var(--muted)">RFI #${r.id} · ${fmtDate(r.created_at)}</div>
+      <div style="font-size:.76rem;margin-top:.3rem">${esc(r.request_text)}</div>
+      ${r.proposed_date?`<div style="font-size:.64rem;color:var(--yellow);margin-top:.3rem">📅 ${fmtDate(r.proposed_date)}</div>`:''}
+    </div>`).join('');
+}
+
+async function createRFI() {
+  const pid = document.getElementById('rfi-ps')?.value || cPid;
+  await ap('/api/rfi', { method: 'POST', body: JSON.stringify({ project_id: parseInt(pid)||1, request_text: document.getElementById('mrfi-t').value, proposed_date: document.getElementById('mrfi-d').value }) });
+  closeM('mrfi'); ntf('✅', 'ok'); loadRFI();
+}
+
+// ─── Messages ────────────────────────────────────────
+async function loadMessagesView() {
+  await Promise.all([loadMessages(), loadParticipantsPanel()]);
+}
+
+async function loadMessages() {
+  const pid = document.getElementById('msg-ps')?.value || cPid;
+  const data = await ap('/api/messages/' + (pid||0));
+  const el = document.getElementById('chat-msgs');
+  if (!data.length) { el.innerHTML = '<div style="text-align:center;color:var(--muted);padding:1rem">Нет сообщений</div>'; return; }
+  el.innerHTML = data.map(m => {
+    const cls = m.role === 'assistant' ? 'ch-bot' : m.source === 'dashboard' ? 'ch-out' : 'ch-in';
+    return `<div class="ch-msg ${cls}">
+      <div class="ch-sender" style="color:${m.role==='assistant'?'var(--green)':'var(--accent)'}">${esc(m.from_user||'—')}</div>
+      <div>${esc(m.text||'')}</div>
+      <div class="ch-time">${fmtDateTime(m.created_at)}</div>
+    </div>`;
+  }).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+function mentionParticipant(username, name) {
+  const input = document.getElementById('chat-in');
+  const mention = username ? `@${username}` : name;
+  input.value = (input.value ? `${input.value} ` : '') + mention + ' ';
+  input.focus();
+}
+
+async function addParticipantFromTelegram(tgId, name) {
+  await ap('/api/members', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: name || `User ${tgId}`,
+      telegram_id: String(tgId),
+      position: document.getElementById('p-pos')?.value?.trim() || ''
+    })
+  });
+  ntf('✅ Участник добавлен в команду', 'ok');
+  await Promise.all([loadParticipantsPanel(), loadTeam()]);
+}
+
+async function addParticipantsByCriteria() {
+  const q = document.getElementById('p-q')?.value?.trim() || '';
+  const status = document.getElementById('p-status')?.value || 'all';
+  const only_username = !!document.getElementById('p-only-un')?.checked;
+  const position = document.getElementById('p-pos')?.value?.trim() || '';
+  const res = await ap('/api/participants/add_by_criteria', {
+    method: 'POST',
+    body: JSON.stringify({ q, status, only_username, position })
+  });
+  ntf(`✅ Добавлено: ${res.added_count || 0}`, 'ok');
+  await Promise.all([loadParticipantsPanel(), loadTeam()]);
+}
+
+async function loadParticipantsPanel() {
+  const source = document.getElementById('p-source')?.value || 'all';
+  const q = document.getElementById('p-q')?.value?.trim() || '';
+  const status = document.getElementById('p-status')?.value || 'all';
+  const only_username = !!document.getElementById('p-only-un')?.checked;
+  const params = new URLSearchParams({ source, q, status, only_username: String(only_username) });
+  const items = await ap('/api/participants?' + params.toString());
+  const el = document.getElementById('chat-p-list');
+  if (!items.length) {
+    el.innerHTML = '<div style="padding:.5rem;color:var(--muted);font-size:.68rem">Нет участников по фильтру</div>';
+    return;
+  }
+  el.innerHTML = items.map(i => `
+    <div class="chat-p-item">
+      <div class="chat-p-meta">
+        <div class="chat-p-name">${esc(i.name || '—')}</div>
+        <div class="chat-p-sub">${i.username ? '@'+esc(i.username) : 'без username'} · ${esc(i.status || 'member')}</div>
+      </div>
+      <div style="display:flex;gap:.2rem">
+        <button class="btn btn-g btn-sm" onclick="mentionParticipant('${esc(i.username || '').replace(/'/g, '&#39;')}','${esc(i.name || '').replace(/'/g, '&#39;')}')">@</button>
+        ${i.in_team ? '<span class="badge badge-green">В команде</span>' : `<button class="btn btn-p btn-sm" onclick="addParticipantFromTelegram('${i.id}','${esc(i.name || '').replace(/'/g, '&#39;')}')">+</button>`}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function sendToTg() {
+  const input = document.getElementById('chat-in');
+  const text = input.value.trim();
+  if (!text) return;
+
+  const pid = document.getElementById('msg-ps')?.value || cPid;
+
+  try {
+    await ap('/api/messages/send', {
+      method: 'POST',
+      body: JSON.stringify({
+        text,
+        project_id: pid
+      })
+    });
+
+    input.value = '';
+    await loadMessages(); // 🔥 обновляем сразу
+
+  } catch (e) {
+    console.error("SEND ERROR", e);
+  }
+}
+
+// ─── Team ────────────────────────────────────────────
+async function loadTeam() {
+  const [members, tgMembers] = await Promise.all([ap('/api/members/all'), ap('/api/telegram/members')]);
+  const colors = ['#38bdf8','#22c55e','#a78bfa','#f97316','#ef4444','#eab308'];
+  const avat = name => name ? name.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase() : '?';
+
+  document.getElementById('tg-members-list').innerHTML = (tgMembers||[]).map(m => `
+    <div class="m-card">
+      <div class="m-av${m.is_online?' m-online':''}" style="background:${colors[m.id%colors.length||0]}">${avat(m.name)}</div>
+      <div>
+        <div style="font-size:.76rem;font-weight:600">${esc(m.name)}</div>
+        <div style="font-size:.62rem;color:var(--muted)">${m.username?'@'+esc(m.username):'—'} · ${esc(m.status||'—')}</div>
+      </div>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:.72rem">Нет участников</div>';
+
+  document.getElementById('members-list').innerHTML = members.map((m, i) => `
+    <div class="m-card">
+      <div class="m-av" style="background:${m.color||colors[i%colors.length]}">${avat(m.name)}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:.76rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(m.name)}</div>
+        <div style="font-size:.62rem;color:var(--muted)">${esc(m.position||'—')}</div>
+      </div>
+      <button class="btn btn-g btn-sm" onclick="delMem(${m.id})" style="font-size:.6rem;padding:1px 4px">✕</button>
+    </div>`).join('') || '<div style="color:var(--muted);font-size:.72rem">Добавьте специалистов</div>';
+}
+
+async function addMem() {
+  const body = { name: document.getElementById('mm-n').value.trim(), telegram_id: document.getElementById('mm-tg').value.trim(),
+    position: document.getElementById('mm-pos').value.trim(), phone: document.getElementById('mm-ph').value.trim(),
+    email: document.getElementById('mm-em').value.trim() };
+  if (!body.name) return ntf('Введите ФИО', 'warn');
+  await ap('/api/members', { method: 'POST', body: JSON.stringify(body) });
+  closeM('mmem'); ntf('✅', 'ok'); loadTeam();
+}
+
+async function delMem(id) {
+  if (!confirm('Удалить?')) return;
+  await ap('/api/members/' + id, { method: 'DELETE' });
+  ntf('Удалено'); loadTeam();
+}
+
+// ─── Workload ─────────────────────────────────────────
+async function loadWorkload() {
+  const data = await ap('/api/workload');
+  const stats = await ap('/api/stats/weekly');
+  const { by_member, by_section } = data;
+
+  const maxM = Math.max(1, ...by_member.map(m=>m.cnt));
+  document.getElementById('wl-members').innerHTML = by_member.length ? by_member.map(m => `
+    <div class="wl-bar"><div class="wl-label"><span>${esc(m.responsible||'Не назначен')}</span><span style="color:var(--muted)">${m.cnt}</span></div>
+    <div class="wl-track"><div class="wl-fill" style="width:${Math.round(m.cnt/maxM*100)}%"></div></div></div>
+  `).join('') : '<div style="color:var(--muted);font-size:.72rem">Нет данных</div>';
+
+  const maxS = Math.max(1, ...by_section.map(s=>s.cnt));
+  document.getElementById('wl-sections').innerHTML = by_section.length ? by_section.map(s => `
+    <div class="wl-bar"><div class="wl-label"><span>${esc(s.section||'—')}</span><span style="color:var(--muted)">${s.cnt}</span></div>
+    <div class="wl-track"><div class="wl-fill" style="width:${Math.round(s.cnt/maxS*100)}%;background:linear-gradient(90deg,var(--green),#16a34a)"></div></div></div>
+  `).join('') : '<div style="color:var(--muted);font-size:.72rem">Нет данных</div>';
+
+  document.getElementById('wl-summary').innerHTML = `
+    <div class="card"><div class="kpi-label">Задач создано за неделю</div><div class="kpi-value" style="font-size:1.6rem">${stats.tasks_opened||0}</div></div>
+    <div class="card"><div class="kpi-label">Задач закрыто</div><div class="kpi-value" style="font-size:1.6rem;color:var(--green)">${stats.tasks_closed||0}</div></div>
+    <div class="card"><div class="kpi-label">Просрочено</div><div class="kpi-value" style="font-size:1.6rem;color:var(--red)">${stats.tasks_overdue||0}</div></div>
+    <div class="card"><div class="kpi-label">Замечаний устранено</div><div class="kpi-value" style="font-size:1.6rem;color:var(--yellow)">${stats.zam_closed||0}</div></div>`;
+}
+
+// ─── Votes ────────────────────────────────────────────
+async function loadVotes() {
+  const pid = document.getElementById('vote-ps')?.value || cPid;
+  const data = await ap('/api/votes' + (pid ? '?project_id='+pid : ''));
+  const el = document.getElementById('votes-list');
+  if (!data.length) { el.innerHTML = '<div style="padding:1rem;color:var(--muted);text-align:center">Нет голосований</div>'; return; }
+  el.innerHTML = data.map(v => `
+    <div class="card" style="margin-bottom:.5rem">
+      <div class="card-head">
+        <span class="card-title">🗳 Голосование #${v.id} <span class="badge badge-${v.status==='open'?'blue':'green'}">${v.status==='open'?'Открыто':'Закрыто'}</span></span>
+        <span style="font-size:.64rem;color:var(--muted)">${fmtDate(v.created_at)}</span>
+      </div>
+      <div style="font-size:.76rem;margin-bottom:.4rem">${esc(v.proposal)}</div>
+      <div style="display:flex;gap:1rem;font-size:.72rem">
+        <span style="color:var(--green)">✅ ${v.yes_count}</span>
+        <span style="color:var(--red)">❌ ${v.no_count}</span>
+        <span style="color:var(--yellow)">💬 ${v.discuss_count}</span>
+        <span style="color:var(--muted)">Автор: ${esc(v.author||'—')}</span>
+      </div>
+    </div>`).join('');
+}
+
+async function createVote() {
+  const pid = document.getElementById('vote-ps')?.value || cPid;
+  await ap('/api/votes', { method: 'POST', body: JSON.stringify({ project_id: parseInt(pid)||1, proposal: document.getElementById('mv-prop').value.trim(), author: document.getElementById('mv-auth').value.trim() }) });
+  closeM('mvote'); ntf('✅ Голосование создано', 'ok'); loadVotes();
+}
+
+// ─── Network Graph ────────────────────────────────────
+let netNodes = [], netEdges = [], netDrag = null, netScale = 1, netOffset = {x:0,y:0};
+
+async function loadNetwork(pid) {
+  if (!pid) return;
+  const data = await ap('/api/projects/' + pid + '/gantt');
+  if (!data || !data.items?.length) { document.getElementById('network-canvas').style.opacity='.3'; return; }
+  document.getElementById('network-canvas').style.opacity='1';
+  buildNetworkGraph(data);
+}
+
+function buildNetworkGraph(data) {
+  const canvas = document.getElementById('network-canvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+
+  // Build nodes from subsections
+  netNodes = data.items.map((item, i) => ({
+    id: item.id, label: item.code, fullLabel: item.name,
+    x: 80 + (i % 6) * 160, y: 60 + Math.floor(i / 6) * 100,
+    status: item.status, section: item.section_code,
+    vx: 0, vy: 0
+  }));
+
+  // Build edges from depends_on
+  netEdges = [];
+  data.items.forEach(item => {
+    if (item.depends_on) {
+      item.depends_on.split(',').forEach(dep => {
+        dep = dep.trim();
+        const from = netNodes.find(n => n.label === dep);
+        const to = netNodes.find(n => n.id === item.id);
+        if (from && to) netEdges.push({ from: from.id, to: to.id });
+      });
+    }
+  });
+
+  // If no edges, create sequential within section
+  if (!netEdges.length) {
+    const bySec = {};
+    data.items.forEach(item => { (bySec[item.section_code] = bySec[item.section_code]||[]).push(item); });
+    Object.values(bySec).forEach(items => {
+      for (let i = 1; i < items.length; i++) netEdges.push({ from: items[i-1].id, to: items[i].id });
+    });
+  }
+
+  drawNetwork(canvas, ctx);
+  setupNetworkInteraction(canvas, ctx);
+}
+
+const NET_COLORS = { not_started:'#334155', in_progress:'#1d4ed8', on_review:'#854d0e', completed:'#14532d', blocked:'#7f1d1d' };
+
+function drawNetwork(canvas, ctx) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(netOffset.x, netOffset.y);
+  ctx.scale(netScale, netScale);
+
+  // Edges
+  ctx.strokeStyle = 'rgba(56,189,248,.25)'; ctx.lineWidth = 1.5;
+  netEdges.forEach(e => {
+    const f = netNodes.find(n=>n.id===e.from), t = netNodes.find(n=>n.id===e.to);
+    if (!f||!t) return;
+    ctx.beginPath(); ctx.moveTo(f.x,f.y); ctx.lineTo(t.x,t.y); ctx.stroke();
+    // Arrow
+    const angle = Math.atan2(t.y-f.y,t.x-f.x);
+    const r = 28;
+    ctx.beginPath();
+    ctx.moveTo(t.x-r*Math.cos(angle)+8*Math.cos(angle-2.5),t.y-r*Math.sin(angle)+8*Math.sin(angle-2.5));
+    ctx.lineTo(t.x-r*Math.cos(angle),t.y-r*Math.sin(angle));
+    ctx.lineTo(t.x-r*Math.cos(angle)+8*Math.cos(angle+2.5),t.y-r*Math.sin(angle)+8*Math.sin(angle+2.5));
+    ctx.strokeStyle='rgba(56,189,248,.5)'; ctx.stroke();
+    ctx.strokeStyle='rgba(56,189,248,.25)';
+  });
+
+  // Nodes
+  netNodes.forEach(n => {
+    ctx.beginPath(); ctx.arc(n.x,n.y,24,0,Math.PI*2);
+    ctx.fillStyle = NET_COLORS[n.status]||'#1e293b';
+    ctx.fill(); ctx.strokeStyle='rgba(56,189,248,.4)'; ctx.lineWidth=1.5; ctx.stroke();
+    ctx.fillStyle='#e2e8f0'; ctx.font='bold 9px Manrope,sans-serif'; ctx.textAlign='center';
+    ctx.fillText(n.label,n.x,n.y+3);
+    ctx.fillStyle='rgba(226,232,240,.5)'; ctx.font='7px Manrope,sans-serif';
+    ctx.fillText(n.fullLabel.substring(0,18)+(n.fullLabel.length>18?'…':''),n.x,n.y+17);
+  });
+  ctx.restore();
+}
+
+function setupNetworkInteraction(canvas, ctx) {
+  canvas.onmousedown = e => {
+    const r = canvas.getBoundingClientRect();
+    const mx=(e.clientX-r.left-netOffset.x)/netScale, my=(e.clientY-r.top-netOffset.y)/netScale;
+    const node=netNodes.find(n=>Math.hypot(n.x-mx,n.y-my)<28);
+    if(node) netDrag={node,ox:mx-node.x,oy:my-node.y};
+    else netDrag={pan:true,sx:e.clientX-netOffset.x,sy:e.clientY-netOffset.y};
+  };
+  canvas.onmousemove = e => {
+    if(!netDrag) return;
+    if(netDrag.pan){netOffset.x=e.clientX-netDrag.sx;netOffset.y=e.clientY-netDrag.sy;}
+    else{const r=canvas.getBoundingClientRect();netDrag.node.x=(e.clientX-r.left-netOffset.x)/netScale-netDrag.ox;netDrag.node.y=(e.clientY-r.top-netOffset.y)/netScale-netDrag.oy;}
+    drawNetwork(canvas,ctx);
+  };
+  canvas.onmouseup = () => { netDrag=null; };
+  canvas.onwheel = e => { e.preventDefault(); netScale=Math.max(.3,Math.min(3,netScale-(e.deltaY>0?.1:-.1))); drawNetwork(canvas,ctx); };
+}
+
+// ─── Members ─────────────────────────────────────────
+async function loadMembers() {
+  const data = await ap('/api/members/all');
+  // handled in loadTeam
+}
+
+// ─── Settings ─────────────────────────────────────────
+function applyUrl() {
+  API = document.getElementById('api-i').value.replace(/\/$/,'');
+  loadProjects(); ntf('🔄 Применено', 'ok');
+}
+
+function saveAiSettings() {
+  localStorage.setItem('ai_key', document.getElementById('ai-key').value);
+  localStorage.setItem('ai_model', document.getElementById('ai-model-sel').value);
+  ntf('✅ Настройки AI сохранены', 'ok');
+}
+
+async function checkStatus() {
+  const el = document.getElementById('sys-status');
+  try {
+    const r = await ap('/api/debug/models');
+    el.innerHTML = `✅ API: подключен<br>📁 БД: ${r.db||'pearl_project.db'}<br>📋 Проектов: ${r.projects||0}<br>🤖 Бот: запущен`;
+  } catch(e) { el.innerHTML = '❌ API недоступен. Запустите bot.py'; }
+}
+
+// ─── AI Assistant ─────────────────────────────────────
+let aiHistory = [];
+// AI Assistant selection UI
+function renderAiSelector() {
+  const aiList = [
+    {name:'ChatGPT',model:'gpt-4',provider:'openai'},
+    {name:'Gemini',model:'gemini-pro',provider:'google'},
+    {name:'Claude',model:'claude-3-opus',provider:'anthropic'},
+    {name:'Perplexity',model:'pplx-7b',provider:'perplexity'},
+    {name:'Any Other',model:'custom',provider:'custom'}
+  ];
+  const sel = document.createElement('select');
+  sel.id = 'ai-model-sel';
+  sel.style.margin = '0 0 .5rem 0';
+  aiList.forEach(ai => {
+    const opt = document.createElement('option');
+    opt.value = ai.model;
+    opt.textContent = ai.name;
+    sel.appendChild(opt);
+  });
+  sel.value = localStorage.getItem('ai_model') || 'claude-3-opus';
+  sel.onchange = () => {
+    localStorage.setItem('ai_model', sel.value);
+    ntf('✅ AI ассистент выбран: ' + sel.options[sel.selectedIndex].text, 'ok');
+  };
+  document.getElementById('ai-panel').insertBefore(sel, document.getElementById('ai-in'));
+}
+window.addEventListener('DOMContentLoaded', renderAiSelector);
+
+function aiQ(q) { document.getElementById('ai-in').value = q; sendAI(); }
+
+async function sendAI() {
+  const inp = document.getElementById('ai-in');
+  const q = inp.value.trim();
+  if (!q) return;
+  inp.value = '';
+
+  const key = localStorage.getItem('ai_key') || document.getElementById('ai-key')?.value || '';
+  const model = localStorage.getItem('ai_model') || 'claude-sonnet-4-20250514';
+
+  addAiMsg(q, true);
+  aiHistory.push({ role: 'user', content: q });
+
+  const thinking = addAiMsg('⏳ Думаю...', false, true);
+
+  // Get project context
+  let context = '';
+  try {
+    const d = await ap('/api/data');
+    const tasks = (d.tasks_open||[]).slice(0,5);
+    const zam = (d.zamechaniya_open||[]).slice(0,3);
+    context = `Данные проекта:\n- Открытых задач: ${d.tasks_open?.length||0}\n- Замечаний: ${d.zamechaniya_open?.length||0}\n`;
+    if (tasks.length) context += `Задачи: ${tasks.map(t=>t.title).join(', ')}\n`;
+    if (zam.length) context += `Замечания: ${zam.map(z=>z.description.substring(0,50)).join('; ')}\n`;
+  } catch(e) {}
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model,
+        max_tokens: 600,
+        system: `Ты — AI ассистент проектного менеджмента Pearl. ${context}Отвечай кратко и по делу на русском.`,
+        messages: aiHistory.slice(-10)
+      })
+    });
+    const data = await resp.json();
+    const reply = data.content?.[0]?.text || data.error?.message || 'Ошибка';
+    thinking.remove();
+    addAiMsg(reply, false);
+    aiHistory.push({ role: 'assistant', content: reply });
+  } catch(e) {
+    thinking.remove();
+    addAiMsg('❌ Ошибка: проверьте API ключ в Настройках', false);
+  }
+}
+
+function addAiMsg(text, isUser, temp=false) {
+  const body = document.getElementById('ai-body');
+  const el = document.createElement('div');
+  el.className = 'ai-msg ' + (isUser ? 'ai-user' : 'ai-bot');
+  el.textContent = text;
+  if (temp) el.style.opacity = '.5';
+  body.appendChild(el);
+  body.scrollTop = body.scrollHeight;
+  return el;
+}
+
+function toggleAI() {
+  const p = document.getElementById('ai-panel');
+  const isC = p.classList.toggle('collapsed');
+  document.getElementById('ai-tog').textContent = isC ? '▶' : '◀';
+}
+
+// ─── SSE Live updates ─────────────────────────────────
+function connectSSE() {
+  try {
+    const es = new EventSource(API + '/api/stream');
+    es.onopen = () => updateConnStatus(true);
+    es.onerror = () => { updateConnStatus(false); setTimeout(connectSSE, 5000); };
+    es.onmessage = e => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.type === 'new_message') {
+          const active = document.querySelector('.view.active');
+          if (active?.id === 'view-messages') loadMessages();
+          ntf('💬 ' + (d.from||'') + ': ' + (d.text||'').substring(0,40));
+        } else if (d.type === 'task_update') {
+          const active = document.querySelector('.view.active');
+          if (active?.id === 'view-tasks') loadTasks();
+        } else if (d.type === 'gantt_update') {
+          refreshG();
+        }
+      } catch(e) {}
+    };
+  } catch(e) { updateConnStatus(false); }
+}
+
+function updateConnStatus(ok) {
+  document.getElementById('cd').classList.toggle('live', ok);
+  document.getElementById('cl').textContent = ok ? 'Онлайн' : 'Оффлайн';
+  document.getElementById('lu').textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru');
+}
+
+// ─── Utils ────────────────────────────────────────────
+function fmtDate(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleDateString('ru',{day:'2-digit',month:'2-digit',year:'numeric'}); } catch(e){return iso;} }
+function fmtDateTime(iso) { if(!iso) return '—'; try { return new Date(iso).toLocaleString('ru',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); } catch(e){return iso;} }
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ─── Init ─────────────────────────────────────────────
+function startDashboardApp() {
+  if (dashboardStarted) return;
+  dashboardStarted = true;
+
+  // Load settings
+  const key = localStorage.getItem('ai_key');
+  if (key) document.getElementById('ai-key').value = key;
+  const mdl = localStorage.getItem('ai_model');
+  if (mdl) document.getElementById('ai-model-sel').value = mdl;
+
+  loadProjects();
+  connectSSE();
+  setInterval(() => { const active=document.querySelector('.view.active'); if(active?.id==='view-messages') loadMessages(); }, 15000);
+}
+</script>
+</body>
+</html>

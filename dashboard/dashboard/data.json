@@ -1,0 +1,101 @@
+{
+  "exported_at": "2026-02-23T18:43:37.256229",
+  "projects": [
+    {
+      "id": 4,
+      "name": "что то там",
+      "topic_id": 1471,
+      "telegram_id": null,
+      "start_date": "2026-02-01",
+      "end_date": "2026-09-01",
+      "status": "active",
+      "created_at": "2026-02-23 12:13:52"
+    },
+    {
+      "id": 3,
+      "name": "проект тест",
+      "topic_id": 1468,
+      "telegram_id": null,
+      "start_date": "2026-02-06",
+      "end_date": "2026-08-29",
+      "status": "active",
+      "created_at": "2026-02-23 09:58:55"
+    },
+    {
+      "id": 2,
+      "name": "Товер",
+      "topic_id": null,
+      "telegram_id": null,
+      "start_date": "2026-02-23",
+      "end_date": "2026-06-30",
+      "status": "active",
+      "created_at": "2026-02-23 09:05:32"
+    },
+    {
+      "id": 1,
+      "name": "Группа -1003837870047",
+      "topic_id": null,
+      "telegram_id": null,
+      "start_date": null,
+      "end_date": null,
+      "status": "active",
+      "created_at": "2026-02-23 09:03:20"
+    }
+  ],
+  "tasks_open": [],
+  "tasks_closed": [],
+  "zamechaniya_open": [],
+  "zamechaniya_closed": [],
+  "changes": [],
+  "messages": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1466,
+      "thread_id": null,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "131231",
+      "source": "telegram",
+      "created_at": "2026-02-23 09:03:20"
+    },
+    {
+      "id": 2,
+      "project_id": 3,
+      "chat_id": -1003837870047,
+      "message_id": 1469,
+      "thread_id": null,
+      "from_user": "Dashboard",
+      "role": "user",
+      "text": "12313",
+      "source": "dashboard",
+      "created_at": "2026-02-23 09:59:43"
+    },
+    {
+      "id": 3,
+      "project_id": 3,
+      "chat_id": -1003837870047,
+      "message_id": 1470,
+      "thread_id": 1468,
+      "from_user": "Dashboard",
+      "role": "user",
+      "text": "12312313",
+      "source": "dashboard",
+      "created_at": "2026-02-23 12:12:57"
+    },
+    {
+      "id": 4,
+      "project_id": 4,
+      "chat_id": -1003837870047,
+      "message_id": 1473,
+      "thread_id": 1471,
+      "from_user": "Dashboard",
+      "role": "user",
+      "text": "Ленар",
+      "source": "dashboard",
+      "created_at": "2026-02-23 13:42:31"
+    }
+  ],
+  "members": []
+}

@@ -1,0 +1,35 @@
+{
+  "exported_at": "2026-02-23T12:24:59.894394",
+  "projects": [
+    {
+      "id": 1,
+      "name": "Группа -1003837870047",
+      "topic_id": null,
+      "telegram_id": null,
+      "start_date": null,
+      "end_date": null,
+      "status": "active",
+      "created_at": "2026-02-23 07:20:57"
+    }
+  ],
+  "tasks_open": [],
+  "tasks_closed": [],
+  "zamechaniya_open": [],
+  "zamechaniya_closed": [],
+  "changes": [],
+  "messages": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1463,
+      "thread_id": null,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "12313",
+      "source": "telegram",
+      "created_at": "2026-02-23 07:20:57"
+    }
+  ],
+  "members": []
+}

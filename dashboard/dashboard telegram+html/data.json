@@ -1,0 +1,167 @@
+{
+  "exported_at": "2026-02-23T08:55:50.206530",
+  "projects": [
+    {
+      "id": 1,
+      "name": "Группа -1003837870047",
+      "topic_id": null,
+      "telegram_id": null,
+      "start_date": null,
+      "end_date": null,
+      "status": "active",
+      "created_at": "2026-02-22 08:10:23"
+    }
+  ],
+  "tasks_open": [],
+  "tasks_closed": [],
+  "zamechaniya_open": [],
+  "zamechaniya_closed": [],
+  "changes": [],
+  "messages": [
+    {
+      "id": 1,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1447,
+      "thread_id": null,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "12313",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:10:23"
+    },
+    {
+      "id": 2,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1448,
+      "thread_id": 1360,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "131321",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:11:48"
+    },
+    {
+      "id": 3,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1449,
+      "thread_id": 1360,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "12312313",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:19:58"
+    },
+    {
+      "id": 4,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1450,
+      "thread_id": 1360,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "работает?",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:20:17"
+    },
+    {
+      "id": 5,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1451,
+      "thread_id": 1362,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "тут",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:20:28"
+    },
+    {
+      "id": 6,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1452,
+      "thread_id": 1318,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "тут",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:20:35"
+    },
+    {
+      "id": 7,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1453,
+      "thread_id": null,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "131313",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:20:49"
+    },
+    {
+      "id": 8,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1454,
+      "thread_id": null,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "131313",
+      "source": "telegram",
+      "created_at": "2026-02-22 08:20:56"
+    },
+    {
+      "id": 9,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1455,
+      "thread_id": 1360,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "13213",
+      "source": "telegram",
+      "created_at": "2026-02-22 10:20:17"
+    },
+    {
+      "id": 10,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1456,
+      "thread_id": 1360,
+      "from_user": "@engineer_abdukamilov",
+      "role": "user",
+      "text": "как",
+      "source": "telegram",
+      "created_at": "2026-02-22 10:20:23"
+    },
+    {
+      "id": 11,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1459,
+      "thread_id": 456465,
+      "from_user": null,
+      "role": "Dashboard",
+      "text": "user",
+      "source": "dashboard",
+      "created_at": "2026-02-23 03:05:16"
+    },
+    {
+      "id": 12,
+      "project_id": 1,
+      "chat_id": -1003837870047,
+      "message_id": 1460,
+      "thread_id": 546546,
+      "from_user": null,
+      "role": "Dashboard",
+      "text": "user",
+      "source": "dashboard",
+      "created_at": "2026-02-23 03:05:23"
+    }
+  ],
+  "members": []
+}

@@ -1,0 +1,15 @@
+# Audio capture
+PyAudioWPatch>=0.2.12
+numpy>=1.24.0
+soundfile>=0.12.0
+
+# Transcription & AI
+openai>=1.0.0
+
+# UI
+customtkinter>=5.2.0
+
+# Utils
+python-dotenv>=1.0.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0

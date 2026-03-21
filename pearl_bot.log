@@ -1,0 +1,541 @@
+2026-02-23 12:10:07,373 [INFO] __main__: 🌐 Дашборд: http://localhost:5050
+2026-02-23 12:10:07,386 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://192.168.1.59:5050
+2026-02-23 12:10:07,386 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2026-02-23 12:10:07,533 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:10:07,562 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:10:07,593 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:10:07,639 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:10:07,669 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:10:07,701 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:10:07] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,467 [INFO] __main__: 🌐 Дашборд: http://localhost:5050
+2026-02-23 12:11:32,483 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://192.168.1.59:5050
+2026-02-23 12:11:32,486 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2026-02-23 12:11:32,613 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,614 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,643 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,644 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,659 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,705 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:11:32] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:11:32,772 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-23 12:11:32,773 [INFO] __main__: 🚀 Pearl Bot запущен!
+2026-02-23 12:11:33,221 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getMe "HTTP/1.1 200 OK"
+2026-02-23 12:11:33,334 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/deleteWebhook "HTTP/1.1 200 OK"
+2026-02-23 12:11:33,336 [INFO] apscheduler.scheduler: Added job "scheduled_weekly_report" to job store "default"
+2026-02-23 12:11:33,336 [INFO] apscheduler.scheduler: Scheduler started
+2026-02-23 12:11:33,337 [INFO] telegram.ext.Application: Application started
+2026-02-23 12:11:43,660 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:11:53,884 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:03,992 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:14,100 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:24,209 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:34,328 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:44,440 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:12:54,552 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:04,662 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:14,770 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:24,877 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:34,987 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:45,094 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:13:55,204 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:05,314 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:15,430 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:25,542 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:35,651 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:45,764 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:55,879 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:14:56,904 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:14:56] "GET / HTTP/1.1" 200 -
+2026-02-23 12:14:57,824 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:14:57] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:14:57,826 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:14:57] "GET /api/projects HTTP/1.1" 200 -
+2026-02-23 12:15:03,154 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:15:03] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:15:05,990 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:13,319 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:15:13] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:15:16,096 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:26,212 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:28,315 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:15:28] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:15:36,321 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:43,312 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:15:43] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:15:46,430 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:56,540 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:15:58,314 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:15:58] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:16:06,650 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:13,312 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:16:13] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:16:16,770 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:26,881 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:28,129 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:16:28] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:16:36,992 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:43,314 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:16:43] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:16:47,104 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:57,210 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:16:58,320 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:16:58] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:17:07,317 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:17:13,316 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:17:13] "GET /api/messages/0 HTTP/1.1" 200 -
+2026-02-23 12:17:17,423 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:17:23,661 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:17:23] "GET / HTTP/1.1" 200 -
+2026-02-23 12:17:24,109 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:17:24] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:17:24,111 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:17:24] "GET /api/projects HTTP/1.1" 200 -
+2026-02-23 12:17:27,534 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:17:37,645 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:17:47,759 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:17:57,870 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:07,979 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:18,086 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:28,194 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:38,302 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:48,429 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:18:56,947 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:18:56] "GET / HTTP/1.1" 200 -
+2026-02-23 12:18:57,351 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:18:57] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:18:57,353 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:18:57] "GET /api/projects HTTP/1.1" 200 -
+2026-02-23 12:18:58,546 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:08,685 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:18,797 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:28,909 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:39,023 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:49,135 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:19:59,248 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:09,370 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:19,483 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:29,598 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:39,709 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:49,819 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:57,501 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:20:57,557 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_application.py", line 1315, in process_update
+    await coroutine
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_handlers\basehandler.py", line 159, in handle_update
+    return await self.callback(update, context)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "d:\Git Khurshid\dashboard\bot.py", line 251, in handle_message
+    conflicts = ai.detect_conflicts(text)
+                ^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'ai_specialists' has no attribute 'detect_conflicts'
+2026-02-23 12:21:07,688 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:21:17,797 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:21:27,907 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:21:38,017 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:21:48,127 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:21:58,240 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:08,349 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:18,458 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:28,566 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:38,677 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:48,789 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:22:58,895 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:23:09,031 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:23:19,146 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:23:29,252 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:23:38,079 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:23:38,082 [INFO] telegram.ext.Application: Application is stopping. This might take a moment.
+2026-02-23 12:23:38,084 [INFO] apscheduler.scheduler: Scheduler has been shut down
+2026-02-23 12:23:38,106 [INFO] telegram.ext.Application: Application.stop() complete
+2026-02-23 12:24:59,916 [INFO] __main__: 🌐 Дашборд: http://localhost:5050
+2026-02-23 12:24:59,926 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5050
+ * Running on http://192.168.1.59:5050
+2026-02-23 12:24:59,926 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
+2026-02-23 12:25:00,031 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,109 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,110 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,219 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,225 [INFO] apscheduler.scheduler: Adding job tentatively -- it will be properly scheduled when the scheduler starts
+2026-02-23 12:25:00,225 [INFO] __main__: 🚀 Pearl Bot запущен!
+2026-02-23 12:25:00,345 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,393 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:00] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:00,653 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getMe "HTTP/1.1 200 OK"
+2026-02-23 12:25:00,760 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/deleteWebhook "HTTP/1.1 200 OK"
+2026-02-23 12:25:00,763 [INFO] apscheduler.scheduler: Added job "scheduled_weekly_report" to job store "default"
+2026-02-23 12:25:00,763 [INFO] apscheduler.scheduler: Scheduler started
+2026-02-23 12:25:00,764 [INFO] telegram.ext.Application: Application started
+2026-02-23 12:25:11,078 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:25:21,198 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:25:31,308 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:25:35,210 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:35] "GET / HTTP/1.1" 200 -
+2026-02-23 12:25:35,348 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:35] "GET /api/config HTTP/1.1" 200 -
+2026-02-23 12:25:35,355 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:35] "GET /api/projects HTTP/1.1" 200 -
+2026-02-23 12:25:35,375 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:35] "GET /api/stream HTTP/1.1" 200 -
+2026-02-23 12:25:35,378 [INFO] werkzeug: 127.0.0.1 - - [23/Feb/2026 12:25:35] "GET /api/projects/1/gantt HTTP/1.1" 200 -
+2026-02-23 12:25:41,418 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:25:51,531 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:01,645 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:11,756 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:21,860 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:31,962 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:42,066 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 200 OK"
+2026-02-23 12:26:44,035 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:26:44,037 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:26:49,278 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:26:49,279 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:26:55,507 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:26:55,509 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:27:03,239 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:27:03,241 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:27:10,855 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:27:10,857 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:27:21,628 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:27:21,630 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
+2026-02-23 12:27:34,590 [INFO] httpx: HTTP Request: POST https://api.telegram.org/bot8327396461:AAHqdn7ioqlwEF01CE9L7U10oi6JuNoyq_s/getUpdates "HTTP/1.1 409 Conflict"
+2026-02-23 12:27:34,592 [ERROR] telegram.ext.Application: No error handlers are registered, logging exception.
+Traceback (most recent call last):
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 161, in network_retry_loop
+    await do_action()
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_utils\networkloop.py", line 154, in do_action
+    action_cb_task.result()
+    ~~~~~~~~~~~~~~~~~~~~~^^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_updater.py", line 340, in polling_action_cb
+    updates = await self.bot.get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 671, in get_updates
+    updates = await super().get_updates(
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<9 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 4860, in get_updates
+    await self._post(
+    ^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    ),
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 703, in _post
+    return await self._do_post(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\ext\_extbot.py", line 369, in _do_post
+    return await super()._do_post(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\_bot.py", line 732, in _do_post
+    result = await request.post(
+             ^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 198, in post
+    result = await self._request_wrapper(
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<7 lines>...
+    )
+    ^
+  File "D:\Git Khurshid\.venv\Lib\site-packages\telegram\request\_baserequest.py", line 375, in _request_wrapper
+    raise exception
+telegram.error.Conflict: Conflict: terminated by other getUpdates request; make sure that only one bot instance is running
