@@ -1,7 +1,13 @@
-# Audio capture
+# Audio capture & processing
 PyAudioWPatch>=0.2.12
 numpy>=1.24.0
 soundfile>=0.12.0
+scipy>=1.10.0
+noisereduce>=3.0.0
+
+# Speaker diarization
+resemblyzer>=0.1.3
+scikit-learn>=1.0
 
 # Transcription & AI
 openai>=1.0.0

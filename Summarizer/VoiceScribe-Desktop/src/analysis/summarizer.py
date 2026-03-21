@@ -10,6 +10,7 @@ from analysis.prompts import (
     ACTION_ITEMS_PROMPT,
     KEY_POINTS_PROMPT,
     TOPICS_PROMPT,
+    TRANSLATE_FULL_PROMPT,
 )
 from utils.config import settings
 from utils.logger import log
@@ -83,6 +84,14 @@ class Summarizer:
             log.error("Failed to parse topics JSON")
             return []
 
+    def translate(self, transcript: str) -> str:
+        """Translate transcript to Russian, preserving sentence count."""
+        log.info("Translating to Russian...")
+        return self._call_llm(
+            TRANSLATE_FULL_PROMPT.format(transcript=transcript),
+            temperature=0.2,
+        )
+
     def full_analysis(self, transcript: str) -> dict:
         """Run all analyses and return combined results."""
         return {
@@ -90,4 +99,5 @@ class Summarizer:
             "action_items": self.extract_actions(transcript),
             "key_points": self.get_key_points(transcript),
             "topics": self.analyze_topics(transcript),
+            "translation": self.translate(transcript),
         }

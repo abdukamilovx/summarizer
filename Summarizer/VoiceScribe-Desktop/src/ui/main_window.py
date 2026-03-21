@@ -9,8 +9,10 @@ from typing import Optional
 
 from audio.capture import AudioCapture, AudioChunk
 from audio.mixer import AudioMixer
+from audio.preprocessor import enhance_speech
 from transcription.whisper_api import WhisperAPITranscriber
 from transcription.streaming import StreamingTranscriber
+from transcription.corrector import TranscriptCorrector
 from transcription.engine import TranscriptionResult
 from analysis.summarizer import Summarizer
 from ui.recording_panel import RecordingPanel
@@ -21,7 +23,6 @@ from utils.storage import Storage
 from utils.logger import log
 
 import soundfile as sf
-import io
 
 
 class MainWindow(ctk.CTk):
@@ -39,6 +40,8 @@ class MainWindow(ctk.CTk):
         self._transcription_result: Optional[TranscriptionResult] = None
         self._streaming_transcriber: Optional[StreamingTranscriber] = None
         self._current_rec_id: Optional[str] = None
+        self._is_stopping = False
+        self._corrector: Optional[TranscriptCorrector] = None
 
         # Services (lazy init)
         self._transcriber: Optional[WhisperAPITranscriber] = None
@@ -125,7 +128,47 @@ class MainWindow(ctk.CTk):
             variable=self._realtime_var,
             onvalue=True,
             offvalue=False,
-        ).pack(side="left", padx=15)
+        ).pack(side="left", padx=10)
+
+        # Translation toggle
+        self._translate_var = ctk.BooleanVar(value=False)
+        ctk.CTkSwitch(
+            bottom,
+            text="\U0001f310 \u041f\u0435\u0440\u0435\u0432\u043e\u0434 \u043d\u0430 RU",
+            variable=self._translate_var,
+            onvalue=True,
+            offvalue=False,
+        ).pack(side="left", padx=10)
+
+        # Noise reduction toggle
+        self._denoise_var = ctk.BooleanVar(value=True)
+        ctk.CTkSwitch(
+            bottom,
+            text="\U0001f50a \u0428\u0443\u043c\u043e\u043f\u043e\u0434\u0430\u0432\u043b\u0435\u043d\u0438\u0435",
+            variable=self._denoise_var,
+            onvalue=True,
+            offvalue=False,
+        ).pack(side="left", padx=10)
+
+        # Auto-correction toggle
+        self._correction_var = ctk.BooleanVar(value=False)
+        ctk.CTkSwitch(
+            bottom,
+            text="\u270f\ufe0f \u0410\u0432\u0442\u043e\u043a\u043e\u0440\u0440\u0435\u043a\u0446\u0438\u044f",
+            variable=self._correction_var,
+            onvalue=True,
+            offvalue=False,
+        ).pack(side="left", padx=10)
+
+        # Speaker diarization toggle
+        self._diarize_var = ctk.BooleanVar(value=False)
+        ctk.CTkSwitch(
+            bottom,
+            text="\U0001f3a4 \u0421\u043f\u0438\u043a\u0435\u0440\u044b",
+            variable=self._diarize_var,
+            onvalue=True,
+            offvalue=False,
+        ).pack(side="left", padx=10)
 
         self.analyze_btn = ctk.CTkButton(
             bottom,
@@ -156,6 +199,18 @@ class MainWindow(ctk.CTk):
         self.analysis_panel.clear()
         self.waveform.reset()
 
+        # Create corrector if auto-correction enabled
+        self._corrector = None
+        if self._correction_var.get():
+            from datetime import datetime
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+            raw_path = str(Storage.get_audio_dir() / f"{ts}_raw.txt")
+            self._corrector = TranscriptCorrector(
+                raw_file_path=raw_path,
+                correction_interval=3,
+                on_corrected=self._on_transcript_corrected,
+            )
+
         # Start streaming transcription if real-time enabled
         if self._realtime_var.get() and settings.OPENAI_API_KEY:
             self._streaming_transcriber = StreamingTranscriber(
@@ -163,9 +218,12 @@ class MainWindow(ctk.CTk):
                 sample_rate=settings.SAMPLE_RATE,
                 interval_sec=settings.CHUNK_DURATION_SEC,
                 on_result=self._on_streaming_result,
+                translate_to_russian=self._translate_var.get(),
+                noise_reduction=self._denoise_var.get(),
+                corrector=self._corrector,
             )
             self._streaming_transcriber.start()
-            log.info("Real-time transcription enabled")
+            log.info("Real-time transcription enabled (translate=%s)", self._translate_var.get())
 
         self._audio_capture = AudioCapture(
             sample_rate=settings.SAMPLE_RATE,
@@ -183,7 +241,17 @@ class MainWindow(ctk.CTk):
             )
 
     def _on_stop_recording(self):
+        """Stop recording and finalize transcription in a background thread.
+
+        This ensures ALL buffered audio is transcribed before we're done,
+        even if the Whisper API calls take time.
+        """
+        if self._is_stopping:
+            return
+        self._is_stopping = True
         log.info("Stopping recording...")
+
+        # Stop audio capture immediately (no more new audio)
         if self._audio_capture:
             self._audio_capture.stop()
             self._audio_capture = None
@@ -193,23 +261,58 @@ class MainWindow(ctk.CTk):
         if flushed:
             self._audio_buffer.append(flushed.data)
 
-        # Stop streaming transcriber and get final result
-        if self._streaming_transcriber:
-            result = self._streaming_transcriber.stop()
-            self._transcription_result = result
-            self._streaming_transcriber = None
+        # Show "finalizing" status
+        self.recording_panel.status_label.configure(
+            text="\u23f3 \u0417\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0438\u0435 \u0442\u0440\u0430\u043d\u0441\u043a\u0440\u0438\u043f\u0446\u0438\u0438...",
+            text_color="#FF9800",
+        )
 
-            # Show final combined transcript
-            if result.text.strip():
-                self.after(0, self._show_transcription, result)
+        # Run the potentially slow stop() in a background thread
+        def finalize():
+            try:
+                if self._streaming_transcriber:
+                    result = self._streaming_transcriber.stop()
+                    self._transcription_result = result
+                    self._streaming_transcriber = None
 
-        total_samples = sum(len(b) for b in self._audio_buffer)
-        duration = total_samples / settings.SAMPLE_RATE
-        log.info(f"Recording stopped. Duration: {duration:.1f}s")
+                    # Run final correction if corrector is active
+                    if self._corrector:
+                        self._corrector.force_correction()
 
-        # Save audio to file and database
-        if self._audio_buffer and duration > 0.5:
-            self._save_recording(duration)
+                    # Run speaker diarization if enabled
+                    if self._diarize_var.get() and result.segments and self._audio_buffer:
+                        self.after(0, lambda: self.recording_panel.status_label.configure(
+                            text="\U0001f3a4 \u041e\u043f\u0440\u0435\u0434\u0435\u043b\u0435\u043d\u0438\u0435 \u0441\u043f\u0438\u043a\u0435\u0440\u043e\u0432...",
+                            text_color="#FF9800",
+                        ))
+                        from transcription.diarizer import SpeakerDiarizer
+                        diarizer = SpeakerDiarizer(sample_rate=settings.SAMPLE_RATE)
+                        full_audio = np.concatenate(self._audio_buffer)
+                        result.segments = diarizer.diarize(full_audio, result.segments)
+                        self._transcription_result = result
+
+                    if result.text.strip():
+                        self.after(0, self._show_transcription, result)
+
+                total_samples = sum(len(b) for b in self._audio_buffer)
+                duration = total_samples / settings.SAMPLE_RATE
+                log.info(f"Recording stopped. Duration: {duration:.1f}s")
+
+                # Save audio to file and database
+                if self._audio_buffer and duration > 0.5:
+                    self._save_recording(duration)
+
+                self.after(0, lambda: self.recording_panel.status_label.configure(
+                    text="\u0417\u0430\u043f\u0438\u0441\u044c \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043d\u0430",
+                    text_color="#4CAF50",
+                ))
+            except Exception as e:
+                log.error(f"Finalization error: {e}")
+                self.after(0, self._show_error, f"\u041e\u0448\u0438\u0431\u043a\u0430: {e}")
+            finally:
+                self._is_stopping = False
+
+        threading.Thread(target=finalize, daemon=True).start()
 
     def _on_audio_chunk(self, chunk: AudioChunk):
         """Called from audio capture thread."""
@@ -233,6 +336,16 @@ class MainWindow(ctk.CTk):
                 self.transcript_view.append_text(seg.text, speaker=seg.speaker)
         self.after(0, update_ui)
 
+    def _on_transcript_corrected(self, corrected_text: str):
+        """Called from background thread when GPT correction is ready."""
+        def update_ui():
+            self.transcript_view.set_text(corrected_text)
+            self.recording_panel.status_label.configure(
+                text="\u2705 \u0422\u0435\u043a\u0441\u0442 \u0441\u043a\u043e\u0440\u0440\u0435\u043a\u0442\u0438\u0440\u043e\u0432\u0430\u043d",
+                text_color="#4CAF50",
+            )
+        self.after(0, update_ui)
+
     # ── Transcription ──
 
     def _transcribe_buffer(self):
@@ -246,6 +359,10 @@ class MainWindow(ctk.CTk):
             try:
                 audio = np.concatenate(self._audio_buffer)
                 log.info(f"Transcribing {len(audio)/settings.SAMPLE_RATE:.1f}s of audio...")
+
+                # Apply noise reduction if enabled
+                if self._denoise_var.get():
+                    audio = enhance_speech(audio, settings.SAMPLE_RATE)
 
                 result = self.transcriber.transcribe_numpy(
                     audio, sample_rate=settings.SAMPLE_RATE
@@ -290,6 +407,11 @@ class MainWindow(ctk.CTk):
                 self.after(0, self.analysis_panel.set_summary, result.get("summary", ""))
                 self.after(0, self.analysis_panel.set_actions, result.get("action_items", []))
                 self.after(0, self.analysis_panel.set_key_points, result.get("key_points", []))
+
+                # Translation tab
+                translation = result.get("translation", "")
+                if translation:
+                    self.after(0, self.analysis_panel.set_translation, text, translation)
 
                 # Save to storage
                 if self._current_rec_id:
