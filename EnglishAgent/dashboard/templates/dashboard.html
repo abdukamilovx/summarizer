@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>English Teacher — Live Dashboard</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; color: #e2e8f0; height: 100vh; display: flex; flex-direction: column; }
+
+/* Header */
+.header { background: #1e293b; padding: 14px 24px; border-bottom: 1px solid #334155; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.header h1 { font-size: 18px; font-weight: 600; color: #60a5fa; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.nav-tabs { display: flex; gap: 4px; }
+.nav-tab { padding: 6px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; background: #0f172a; color: #94a3b8; border: 1px solid #334155; transition: all 0.15s; }
+.nav-tab.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+.nav-tab:hover:not(.active) { border-color: #60a5fa; color: #e2e8f0; }
+.header .status { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
+.header .dot { width: 8px; height: 8px; border-radius: 50%; background: #ef4444; }
+.header .dot.connected { background: #22c55e; }
+
+/* Page views */
+.page-view { display: none; flex: 1; overflow: hidden; }
+.page-view.active { display: flex; }
+
+/* Main layout (Live Sessions) */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* Sessions panel */
+.sessions-panel { width: 260px; background: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; flex-shrink: 0; }
+.panel-title { padding: 12px 16px; font-size: 12px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #334155; }
+.sessions-list { flex: 1; overflow-y: auto; padding: 8px; }
+.session-card { padding: 10px 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; background: #0f172a; border: 1px solid #334155; transition: all 0.15s; }
+.session-card:hover, .session-card.active { border-color: #60a5fa; background: #1e3a5f; }
+.source { display: inline-block; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+.source-telegram { background: #0ea5e9; color: white; }
+.source-twilio { background: #a855f7; color: white; }
+.source-desktop { background: #22c55e; color: white; }
+.source-unknown { background: #64748b; color: white; }
+.session-card .mode-badge { font-size: 10px; color: #94a3b8; margin-left: 4px; }
+.session-card .stats { font-size: 11px; color: #64748b; margin-top: 4px; }
+.session-card .error-count { color: #f87171; }
+
+/* Center content */
+.center { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.center-header { padding: 12px 20px; border-bottom: 1px solid #334155; background: #1e293b; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
+.center-header h2 { font-size: 14px; color: #e2e8f0; }
+.center-body { flex: 1; overflow-y: auto; padding: 16px 20px; }
+.empty-state { display: flex; align-items: center; justify-content: center; height: 100%; color: #475569; font-size: 14px; }
+
+/* Transcript messages */
+.exchange { margin-bottom: 20px; border: 1px solid #1e293b; border-radius: 10px; overflow: hidden; }
+.exchange:hover { border-color: #334155; }
+.msg-row { padding: 10px 14px; }
+.msg-row.user-row { background: #1a2744; }
+.msg-row.teacher-row { background: #0f172a; }
+.msg-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px; }
+.msg-label.student { color: #60a5fa; }
+.msg-label.teacher { color: #34d399; }
+.msg-text { font-size: 13px; line-height: 1.5; color: #e2e8f0; }
+.msg-time { font-size: 10px; color: #475569; margin-top: 2px; }
+
+/* Analysis block inside exchange */
+.analysis-block { background: #1e293b; padding: 10px 14px; border-top: 1px solid #334155; }
+.analysis-section { margin-bottom: 8px; }
+.analysis-section:last-child { margin-bottom: 0; }
+.analysis-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.analysis-title.errors { color: #f87171; }
+.analysis-title.alternatives { color: #fbbf24; }
+.analysis-title.vocab { color: #34d399; }
+.analysis-title.complex { color: #a78bfa; }
+.analysis-item { font-size: 12px; padding: 4px 8px; margin-bottom: 3px; border-radius: 4px; background: #0f172a; line-height: 1.5; }
+.analysis-item .orig { color: #f87171; text-decoration: line-through; }
+.analysis-item .correct { color: #34d399; font-weight: 600; }
+.analysis-item .rule { color: #94a3b8; font-style: italic; }
+.analysis-item .ru { color: #a78bfa; }
+.analysis-item .word { color: #60a5fa; font-weight: 600; }
+.analysis-item .level { font-size: 10px; padding: 1px 4px; border-radius: 3px; background: #334155; color: #94a3b8; margin-left: 4px; }
+
+/* Right panel: Vocabulary & Summary */
+.right-panel { width: 280px; background: #1e293b; border-left: 1px solid #334155; display: flex; flex-direction: column; flex-shrink: 0; overflow: hidden; }
+.right-section { border-bottom: 1px solid #334155; padding: 12px; overflow-y: auto; }
+.right-section:last-child { border-bottom: none; flex: 1; }
+.vocab-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; margin-bottom: 3px; border-radius: 4px; background: #0f172a; font-size: 12px; }
+.vocab-word { color: #60a5fa; font-weight: 600; }
+.vocab-translation { color: #a78bfa; font-size: 11px; }
+.vocab-level { font-size: 9px; padding: 1px 4px; border-radius: 3px; background: #334155; color: #94a3b8; }
+.complex-item { padding: 6px 8px; margin-bottom: 3px; border-radius: 4px; background: #0f172a; font-size: 12px; }
+.complex-item .cw { color: #a78bfa; font-weight: 600; }
+.complex-item .ct { color: #94a3b8; font-size: 11px; }
+.complex-item .cc { color: #475569; font-size: 11px; font-style: italic; margin-top: 2px; }
+
+/* Stats bar */
+.stats-bar { background: #1e293b; border-top: 1px solid #334155; padding: 10px 24px; display: flex; gap: 28px; flex-shrink: 0; }
+.stat { display: flex; flex-direction: column; }
+.stat .value { font-size: 20px; font-weight: 700; color: #60a5fa; }
+.stat .value.error-val { color: #f87171; }
+.stat .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+
+/* ─── Students Page ──────────────────────────────────── */
+.students-page { flex-direction: row; }
+.students-list-panel { width: 300px; background: #1e293b; border-right: 1px solid #334155; display: flex; flex-direction: column; flex-shrink: 0; }
+.students-list { flex: 1; overflow-y: auto; padding: 8px; }
+.student-card { padding: 12px; border-radius: 8px; cursor: pointer; margin-bottom: 4px; background: #0f172a; border: 1px solid #334155; transition: all 0.15s; }
+.student-card:hover, .student-card.active { border-color: #60a5fa; background: #1e3a5f; }
+.student-name { font-size: 14px; font-weight: 600; color: #e2e8f0; }
+.student-level { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+.level-A1 { background: #064e3b; color: #6ee7b7; }
+.level-A2 { background: #065f46; color: #6ee7b7; }
+.level-B1 { background: #1e3a5f; color: #60a5fa; }
+.level-B2 { background: #312e81; color: #a78bfa; }
+.level-C1 { background: #581c87; color: #d8b4fe; }
+.student-meta { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+.student-detail { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.student-detail-header { padding: 16px 24px; border-bottom: 1px solid #334155; background: #1e293b; }
+.student-detail-header h2 { font-size: 16px; color: #e2e8f0; margin-bottom: 4px; }
+.student-detail-header .meta { font-size: 12px; color: #94a3b8; }
+.student-detail-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+
+/* Stats cards row */
+.stats-cards { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+.stats-card { flex: 1; min-width: 120px; padding: 14px; border-radius: 10px; background: #1e293b; border: 1px solid #334155; }
+.stats-card .sc-value { font-size: 24px; font-weight: 700; color: #60a5fa; }
+.stats-card .sc-label { font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+/* Grammar chart */
+.grammar-section { margin-bottom: 24px; }
+.grammar-section h3 { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.grammar-bar-row { display: flex; align-items: center; margin-bottom: 8px; }
+.grammar-bar-label { width: 160px; font-size: 12px; color: #94a3b8; text-transform: capitalize; flex-shrink: 0; }
+.grammar-bar-track { flex: 1; height: 18px; background: #0f172a; border-radius: 4px; overflow: hidden; position: relative; }
+.grammar-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.grammar-bar-score { position: absolute; right: 6px; top: 1px; font-size: 11px; font-weight: 600; color: #e2e8f0; }
+.bar-good { background: #22c55e; }
+.bar-ok { background: #eab308; }
+.bar-weak { background: #ef4444; }
+
+/* Vocabulary table */
+.vocab-table-section { margin-bottom: 24px; }
+.vocab-table-section h3 { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.vocab-table { width: 100%; border-collapse: collapse; }
+.vocab-table th { text-align: left; font-size: 11px; color: #64748b; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid #334155; }
+.vocab-table td { font-size: 12px; padding: 6px 10px; border-bottom: 1px solid #1e293b; }
+.vocab-table tr:hover td { background: #1e293b; }
+.score-bar-mini { display: inline-block; width: 60px; height: 6px; background: #0f172a; border-radius: 3px; overflow: hidden; vertical-align: middle; margin-right: 6px; }
+.score-bar-mini-fill { height: 100%; border-radius: 3px; }
+
+/* Session history */
+.session-history-section h3 { font-size: 13px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 12px; }
+.session-history-item { display: flex; gap: 16px; align-items: center; padding: 8px 12px; margin-bottom: 4px; border-radius: 6px; background: #1e293b; font-size: 12px; }
+.session-history-item .sh-date { color: #64748b; width: 140px; flex-shrink: 0; }
+.session-history-item .sh-dur { color: #94a3b8; width: 60px; }
+.session-history-item .sh-msgs { color: #60a5fa; width: 60px; }
+.session-history-item .sh-words { color: #34d399; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>English Teacher — Live Analytics</h1>
+    <div class="header-right">
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchPage('sessions')">Live Sessions</div>
+            <div class="nav-tab" onclick="switchPage('students')">Students</div>
+        </div>
+        <div class="status">
+            <div class="dot" id="ws-dot"></div>
+            <span id="ws-status">Connecting...</span>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Live Sessions Page ═══ -->
+<div class="page-view active" id="page-sessions">
+    <div class="main">
+        <div class="sessions-panel">
+            <div class="panel-title">Sessions</div>
+            <div class="sessions-list" id="sessions-list">
+                <div class="empty-state" style="height:auto;padding:30px 16px;font-size:12px;">No sessions yet</div>
+            </div>
+        </div>
+
+        <div class="center">
+            <div class="center-header">
+                <h2 id="transcript-title">Select a session</h2>
+            </div>
+            <div class="center-body" id="transcript-body">
+                <div class="empty-state">Select a session to view live transcript with analysis</div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <div class="panel-title">Vocabulary (New Words)</div>
+            <div class="right-section" id="vocab-list" style="max-height: 45%;">
+                <div style="color:#475569;font-size:12px;padding:8px;">No vocabulary yet</div>
+            </div>
+            <div class="panel-title">Complex Words (Teacher)</div>
+            <div class="right-section" id="complex-list">
+                <div style="color:#475569;font-size:12px;padding:8px;">No complex words yet</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ Students Page ═══ -->
+<div class="page-view students-page" id="page-students">
+    <div class="students-list-panel">
+        <div class="panel-title">Students</div>
+        <div class="students-list" id="students-list">
+            <div style="color:#475569;font-size:12px;padding:30px 16px;">Loading...</div>
+        </div>
+    </div>
+    <div class="student-detail">
+        <div class="student-detail-header" id="student-header">
+            <h2>Select a student</h2>
+            <div class="meta">Choose a student from the list to view their profile</div>
+        </div>
+        <div class="student-detail-body" id="student-body">
+            <div class="empty-state">Select a student to view their progress, grammar, and vocabulary</div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-bar">
+    <div class="stat">
+        <span class="value" id="stat-sessions">0</span>
+        <span class="label">Sessions</span>
+    </div>
+    <div class="stat">
+        <span class="value" id="stat-messages">0</span>
+        <span class="label">Messages</span>
+    </div>
+    <div class="stat">
+        <span class="value error-val" id="stat-errors">0</span>
+        <span class="label">Errors</span>
+    </div>
+    <div class="stat">
+        <span class="value" id="stat-user-words">0</span>
+        <span class="label">Student Words</span>
+    </div>
+    <div class="stat">
+        <span class="value" id="stat-teacher-words">0</span>
+        <span class="label">Teacher Words</span>
+    </div>
+    <div class="stat">
+        <span class="value" id="stat-ratio">—</span>
+        <span class="label">Talk Ratio</span>
+    </div>
+    <div class="stat">
+        <span class="value" id="stat-vocab">0</span>
+        <span class="label">Words Learned</span>
+    </div>
+</div>
+
+<script>
+/* ─── State ─────────────────────────────────────── */
+const sessionsData = {};
+let selectedSessionId = null;
+let selectedStudentId = null;
+let studentsData = [];
+let currentPage = 'sessions';
+
+/* ─── Utils ─────────────────────────────────────── */
+function fmt(s) { const m = Math.floor(s/60); return `${m}:${String(Math.floor(s%60)).padStart(2,'0')}`; }
+function ftime(ts) { return new Date(ts*1000).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function esc(t) { const d=document.createElement('div'); d.textContent=t; return d.innerHTML; }
+
+/* ─── Page Switching ────────────────────────────── */
+function switchPage(page) {
+    currentPage = page;
+    document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelectorAll('.nav-tab')[page === 'sessions' ? 0 : 1].classList.add('active');
+    if (page === 'students') loadStudents();
+}
+
+/* ─── Live Sessions ─────────────────────────────── */
+function renderSessions() {
+    const el = document.getElementById('sessions-list');
+    const entries = Object.values(sessionsData).sort((a,b) => (b.start_time||0)-(a.start_time||0));
+    if (!entries.length) { el.innerHTML = '<div style="color:#475569;font-size:12px;padding:30px 16px;">No sessions yet</div>'; return; }
+    el.innerHTML = entries.map(s => `
+        <div class="session-card ${s.session_id===selectedSessionId?'active':''}" onclick="selectSession('${s.session_id}')">
+            <span class="source source-${s.source||'unknown'}">${s.source||'?'}</span>
+            <span class="mode-badge">${s.mode}</span>
+            <div class="stats">
+                ${s.message_count} msgs · ${s.user_word_count} words · ${fmt(s.duration)}
+                ${s.total_errors ? ` · <span class="error-count">${s.total_errors} errors</span>` : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+function renderTranscript() {
+    const body = document.getElementById('transcript-body');
+    const title = document.getElementById('transcript-title');
+    if (!selectedSessionId || !sessionsData[selectedSessionId]) {
+        title.textContent = 'Select a session';
+        body.innerHTML = '<div class="empty-state">Select a session to view live transcript with analysis</div>';
+        renderVocab(null);
+        return;
+    }
+    const s = sessionsData[selectedSessionId];
+    title.textContent = `${(s.source||'').toUpperCase()} · ${s.mode} mode · ${fmt(s.duration)} · ${s.total_errors||0} errors`;
+
+    body.innerHTML = s.messages.map(m => {
+        const a = m.analysis || {};
+        const errors = a.errors || [];
+        const alts = a.alternative_phrases || [];
+        const vocab = a.vocabulary_used || [];
+        const complex = a.complex_words || [];
+        const hasAnalysis = errors.length || alts.length || vocab.length || complex.length;
+
+        let html = `<div class="exchange">`;
+        html += `<div class="msg-row user-row">
+            <div class="msg-label student">Student</div>
+            <div class="msg-text">${esc(m.user||'')}</div>
+            <div class="msg-time">${ftime(m.timestamp)}</div>
+        </div>`;
+        html += `<div class="msg-row teacher-row">
+            <div class="msg-label teacher">Teacher</div>
+            <div class="msg-text">${esc(m.assistant||'')}</div>
+        </div>`;
+
+        if (hasAnalysis) {
+            html += `<div class="analysis-block">`;
+            if (errors.length) {
+                html += `<div class="analysis-section">
+                    <div class="analysis-title errors">⚠ Errors & Corrections</div>
+                    ${errors.map(e => `<div class="analysis-item">
+                        <span class="orig">${esc(e.original)}</span> → <span class="correct">${esc(e.corrected)}</span><br>
+                        <span class="rule">${esc(e.rule)}</span><br>
+                        <span class="ru">${esc(e.rule_ru||'')}</span>
+                    </div>`).join('')}
+                </div>`;
+            }
+            if (alts.length) {
+                html += `<div class="analysis-section">
+                    <div class="analysis-title alternatives">💡 Better Ways to Say It</div>
+                    ${alts.map(a => `<div class="analysis-item">
+                        "${esc(a.student_said)}" →
+                        ${(a.alternatives||[]).map((alt,i) => `<span class="correct">${esc(alt)}</span>${a.alternatives_ru&&a.alternatives_ru[i]?` <span class="ru">(${esc(a.alternatives_ru[i])})</span>`:''}`).join(', ')}
+                    </div>`).join('')}
+                </div>`;
+            }
+            if (complex.length) {
+                html += `<div class="analysis-section">
+                    <div class="analysis-title complex">📚 Complex Words (Teacher)</div>
+                    ${complex.map(w => `<div class="analysis-item">
+                        <span class="word">${esc(w.word)}</span> — <span class="ru">${esc(w.translation_ru||'')}</span>
+                    </div>`).join('')}
+                </div>`;
+            }
+            if (vocab.length) {
+                html += `<div class="analysis-section">
+                    <div class="analysis-title vocab">🆕 New Vocabulary</div>
+                    ${vocab.map(v => `<div class="analysis-item">
+                        <span class="word">${esc(v.word)}</span> — <span class="ru">${esc(v.translation_ru||'')}</span>
+                        <span class="level">${v.level||''}</span>
+                    </div>`).join('')}
+                </div>`;
+            }
+            html += `</div>`;
+        }
+        html += `</div>`;
+        return html;
+    }).join('');
+
+    body.scrollTop = body.scrollHeight;
+    renderVocab(s);
+}
+
+function renderVocab(session) {
+    const vocabEl = document.getElementById('vocab-list');
+    const complexEl = document.getElementById('complex-list');
+    if (!session) {
+        vocabEl.innerHTML = '<div style="color:#475569;font-size:12px;padding:8px;">No vocabulary yet</div>';
+        complexEl.innerHTML = '<div style="color:#475569;font-size:12px;padding:8px;">No complex words yet</div>';
+        return;
+    }
+    const vocab = session.all_vocabulary || [];
+    const complex = session.all_complex_words || [];
+
+    const seenV = new Set();
+    const uniqueVocab = vocab.filter(v => { if (seenV.has(v.word)) return false; seenV.add(v.word); return true; });
+    if (uniqueVocab.length) {
+        vocabEl.innerHTML = uniqueVocab.map(v => `
+            <div class="vocab-item">
+                <div><span class="vocab-word">${esc(v.word)}</span> <span class="vocab-level">${v.level||''}</span></div>
+                <span class="vocab-translation">${esc(v.translation_ru||'')}</span>
+            </div>
+        `).join('');
+    } else {
+        vocabEl.innerHTML = '<div style="color:#475569;font-size:12px;padding:8px;">No vocabulary yet</div>';
+    }
+
+    const seenC = new Set();
+    const uniqueComplex = complex.filter(w => { if (seenC.has(w.word)) return false; seenC.add(w.word); return true; });
+    if (uniqueComplex.length) {
+        complexEl.innerHTML = uniqueComplex.map(w => `
+            <div class="complex-item">
+                <div><span class="cw">${esc(w.word)}</span> — <span class="ct">${esc(w.translation_ru||'')}</span></div>
+                ${w.context ? `<div class="cc">"${esc(w.context)}"</div>` : ''}
+            </div>
+        `).join('');
+    } else {
+        complexEl.innerHTML = '<div style="color:#475569;font-size:12px;padding:8px;">No complex words yet</div>';
+    }
+}
+
+function updateStats() {
+    const all = Object.values(sessionsData);
+    const t = {
+        sessions: all.length,
+        messages: all.reduce((s,x) => s+x.message_count, 0),
+        errors: all.reduce((s,x) => s+(x.total_errors||0), 0),
+        userWords: all.reduce((s,x) => s+x.user_word_count, 0),
+        teacherWords: all.reduce((s,x) => s+x.assistant_word_count, 0),
+        vocab: all.reduce((s,x) => s+(x.all_vocabulary||[]).length, 0),
+    };
+    document.getElementById('stat-sessions').textContent = t.sessions;
+    document.getElementById('stat-messages').textContent = t.messages;
+    document.getElementById('stat-errors').textContent = t.errors;
+    document.getElementById('stat-user-words').textContent = t.userWords;
+    document.getElementById('stat-teacher-words').textContent = t.teacherWords;
+    document.getElementById('stat-ratio').textContent = t.teacherWords ? (t.userWords/t.teacherWords).toFixed(1) : '—';
+    document.getElementById('stat-vocab').textContent = t.vocab;
+}
+
+function selectSession(sid) {
+    selectedSessionId = sid;
+    renderSessions();
+    renderTranscript();
+}
+
+/* ─── Students Page ─────────────────────────────── */
+async function loadStudents() {
+    try {
+        const r = await fetch('/dashboard/api/students');
+        studentsData = await r.json();
+        renderStudentsList();
+    } catch(e) {
+        console.error('Failed to load students:', e);
+        document.getElementById('students-list').innerHTML =
+            '<div style="color:#f87171;font-size:12px;padding:16px;">Failed to load students</div>';
+    }
+}
+
+function renderStudentsList() {
+    const el = document.getElementById('students-list');
+    if (!studentsData.length) {
+        el.innerHTML = '<div style="color:#475569;font-size:12px;padding:30px 16px;">No students yet. Start a lesson via Telegram!</div>';
+        return;
+    }
+    el.innerHTML = studentsData.map(s => `
+        <div class="student-card ${s.student_id == selectedStudentId ? 'active' : ''}"
+             onclick="selectStudent(${s.student_id})">
+            <span class="student-name">${esc(s.name || 'Student #' + s.student_id)}</span>
+            <span class="student-level level-${s.level||'A1'}">${s.level||'A1'}</span>
+            <div class="student-meta">
+                ${s.vocabulary_total||0} words · ${s.session_count||0} sessions
+                ${s.last_session_at ? ' · Last: ' + new Date(s.last_session_at).toLocaleDateString() : ''}
+            </div>
+        </div>
+    `).join('');
+}
+
+async function selectStudent(id) {
+    selectedStudentId = id;
+    renderStudentsList();
+
+    const headerEl = document.getElementById('student-header');
+    const bodyEl = document.getElementById('student-body');
+
+    const student = studentsData.find(s => s.student_id == id);
+    if (!student) return;
+
+    headerEl.innerHTML = `
+        <h2>${esc(student.name || 'Student #' + id)}
+            <span class="student-level level-${student.level||'A1'}">${student.level||'A1'}</span>
+        </h2>
+        <div class="meta">
+            Score: ${(student.level_score||0).toFixed(0)}/100 ·
+            Mode: ${student.mode||'kids'} ·
+            Joined: ${student.created_at ? new Date(student.created_at).toLocaleDateString() : '—'}
+        </div>
+    `;
+
+    bodyEl.innerHTML = '<div style="color:#475569;padding:20px;">Loading student data...</div>';
+
+    try {
+        const [grammarRes, vocabRes, progressRes] = await Promise.all([
+            fetch(`/dashboard/api/students/${id}/grammar`),
+            fetch(`/dashboard/api/students/${id}/vocabulary`),
+            fetch(`/dashboard/api/students/${id}/progress`),
+        ]);
+        const grammar = await grammarRes.json();
+        const vocab = await vocabRes.json();
+        const progress = await progressRes.json();
+
+        renderStudentDetail(student, grammar, vocab, progress);
+    } catch(e) {
+        console.error('Failed to load student detail:', e);
+        bodyEl.innerHTML = '<div style="color:#f87171;padding:20px;">Failed to load student data</div>';
+    }
+}
+
+function renderStudentDetail(student, grammar, vocab, progress) {
+    const bodyEl = document.getElementById('student-body');
+    let html = '';
+
+    // Stats cards
+    html += `<div class="stats-cards">
+        <div class="stats-card">
+            <div class="sc-value">${student.vocabulary_total||0}</div>
+            <div class="sc-label">Total Words</div>
+        </div>
+        <div class="stats-card">
+            <div class="sc-value">${student.vocabulary_mastered||0}</div>
+            <div class="sc-label">Mastered (80%+)</div>
+        </div>
+        <div class="stats-card">
+            <div class="sc-value">${student.session_count||0}</div>
+            <div class="sc-label">Sessions</div>
+        </div>
+        <div class="stats-card">
+            <div class="sc-value" style="color:#f87171">${student.pending_homework||0}</div>
+            <div class="sc-label">Pending HW</div>
+        </div>
+    </div>`;
+
+    // Grammar chart
+    if (grammar.length) {
+        html += `<div class="grammar-section"><h3>Grammar Areas</h3>`;
+        grammar.sort((a,b) => a.score - b.score);
+        html += grammar.map(g => {
+            const score = g.score || 0;
+            const barClass = score >= 70 ? 'bar-good' : score >= 40 ? 'bar-ok' : 'bar-weak';
+            return `<div class="grammar-bar-row">
+                <div class="grammar-bar-label">${esc(g.area.replace(/_/g, ' '))}</div>
+                <div class="grammar-bar-track">
+                    <div class="grammar-bar-fill ${barClass}" style="width:${score}%"></div>
+                    <div class="grammar-bar-score">${score.toFixed(0)}% (${g.error_count} errors)</div>
+                </div>
+            </div>`;
+        }).join('');
+        html += `</div>`;
+    }
+
+    // Vocabulary table
+    if (vocab.length) {
+        html += `<div class="vocab-table-section"><h3>Vocabulary (${vocab.length} words)</h3>
+            <table class="vocab-table">
+                <thead><tr><th>Word</th><th>Translation</th><th>Level</th><th>Score</th><th>Tested</th></tr></thead>
+                <tbody>`;
+        vocab.slice(0, 50).forEach(v => {
+            const score = v.score || 0;
+            const barClass = score >= 80 ? 'bar-good' : score >= 40 ? 'bar-ok' : 'bar-weak';
+            html += `<tr>
+                <td style="color:#60a5fa;font-weight:600">${esc(v.word)}</td>
+                <td style="color:#a78bfa">${esc(v.translation_ru||'')}</td>
+                <td><span class="vocab-level">${v.level||''}</span></td>
+                <td>
+                    <span class="score-bar-mini"><span class="score-bar-mini-fill ${barClass}" style="width:${score}%"></span></span>
+                    ${score.toFixed(0)}%
+                </td>
+                <td style="color:#64748b">${v.times_tested||0}x (${v.times_correct||0} correct)</td>
+            </tr>`;
+        });
+        html += `</tbody></table>`;
+        if (vocab.length > 50) {
+            html += `<div style="color:#64748b;font-size:11px;padding:8px;">Showing 50 of ${vocab.length} words</div>`;
+        }
+        html += `</div>`;
+    }
+
+    // Session history
+    const sessions = progress.sessions || [];
+    if (sessions.length) {
+        html += `<div class="session-history-section"><h3>Session History</h3>`;
+        html += sessions.slice(0, 20).map(sh => {
+            const dur = sh.duration_seconds ? fmt(sh.duration_seconds) : '—';
+            const date = sh.started_at ? new Date(sh.started_at).toLocaleString() : '—';
+            let words = [];
+            try { words = JSON.parse(sh.words_learned || '[]'); } catch(e) {}
+            return `<div class="session-history-item">
+                <span class="sh-date">${date}</span>
+                <span class="sh-dur">${dur}</span>
+                <span class="sh-msgs">${sh.message_count||0} msgs</span>
+                <span class="sh-words">${words.length ? words.map(w=>esc(w.word||w)).join(', ') : '—'}</span>
+            </div>`;
+        }).join('');
+        html += `</div>`;
+    }
+
+    bodyEl.innerHTML = html;
+}
+
+/* ─── WebSocket & Init ──────────────────────────── */
+function handleUpdate(data) {
+    if (data.type === 'live_update' && data.session) {
+        sessionsData[data.session.session_id] = data.session;
+        if (!selectedSessionId) selectedSessionId = data.session.session_id;
+        renderSessions();
+        if (data.session.session_id === selectedSessionId) renderTranscript();
+        updateStats();
+    }
+}
+
+function connectWS() {
+    const p = location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${p}//${location.host}/dashboard/ws`);
+    ws.onopen = () => {
+        document.getElementById('ws-dot').classList.add('connected');
+        document.getElementById('ws-status').textContent = 'Connected';
+    };
+    ws.onclose = () => {
+        document.getElementById('ws-dot').classList.remove('connected');
+        document.getElementById('ws-status').textContent = 'Reconnecting...';
+        setTimeout(connectWS, 3000);
+    };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (e) => { try { handleUpdate(JSON.parse(e.data)); } catch(err) { console.error(err); } };
+}
+
+async function loadSessions() {
+    try {
+        const r = await fetch('/dashboard/api/sessions');
+        (await r.json()).forEach(s => sessionsData[s.session_id] = s);
+        renderSessions();
+        updateStats();
+    } catch(e) { console.error(e); }
+}
+
+loadSessions();
+connectWS();
+</script>
+</body>
+</html>
