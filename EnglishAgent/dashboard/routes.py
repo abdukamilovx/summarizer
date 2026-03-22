@@ -70,6 +70,38 @@ async def get_student_progress(student_id: int):
     }
 
 
+@router.get("/api/students/{student_id}/topics")
+async def get_student_topics(student_id: int):
+    """Get completed topics for a student."""
+    if storage is None:
+        return []
+    return storage.get_completed_topics(student_id)
+
+
+@router.get("/api/students/{student_id}/pronunciation")
+async def get_student_pronunciation(student_id: int):
+    """Get pronunciation stats for a student."""
+    if storage is None:
+        return []
+    return storage.get_pronunciation_stats(student_id)
+
+
+@router.get("/api/students/{student_id}/badges")
+async def get_student_badges(student_id: int):
+    """Get badges for a student."""
+    if storage is None:
+        return []
+    return storage.get_badges(student_id)
+
+
+@router.get("/api/leaderboard")
+async def get_leaderboard():
+    """Get top students by XP."""
+    if storage is None:
+        return []
+    return storage.get_leaderboard(limit=20)
+
+
 @router.websocket("/ws")
 async def dashboard_ws(websocket: WebSocket):
     if analytics_hub is None:

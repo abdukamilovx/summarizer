@@ -169,6 +169,7 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; colo
         <div class="nav-tabs">
             <div class="nav-tab active" onclick="switchPage('sessions')">Live Sessions</div>
             <div class="nav-tab" onclick="switchPage('students')">Students</div>
+            <div class="nav-tab" onclick="switchPage('leaderboard')">Leaderboard</div>
         </div>
         <div class="status">
             <div class="dot" id="ws-dot"></div>
@@ -228,6 +229,14 @@ body { font-family: 'Segoe UI', system-ui, sans-serif; background: #0f172a; colo
     </div>
 </div>
 
+<!-- ═══ Leaderboard Page ═══ -->
+<div class="page-view" id="page-leaderboard" style="flex-direction:column;align-items:center;padding:40px 20px;">
+    <div style="max-width:600px;width:100%;">
+        <h2 style="color:#fbbf24;font-size:20px;margin-bottom:20px;">🏆 Leaderboard — Top Students</h2>
+        <div id="leaderboard-body" style="color:#475569;font-size:13px;">Loading...</div>
+    </div>
+</div>
+
 <div class="stats-bar">
     <div class="stat">
         <span class="value" id="stat-sessions">0</span>
@@ -278,8 +287,11 @@ function switchPage(page) {
     document.querySelectorAll('.page-view').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
     document.getElementById('page-' + page).classList.add('active');
-    document.querySelectorAll('.nav-tab')[page === 'sessions' ? 0 : 1].classList.add('active');
+    const tabs = document.querySelectorAll('.nav-tab');
+    const tabIdx = {sessions:0, students:1, leaderboard:2};
+    if (tabs[tabIdx[page]]) tabs[tabIdx[page]].classList.add('active');
     if (page === 'students') loadStudents();
+    if (page === 'leaderboard') loadLeaderboard();
 }
 
 /* ─── Live Sessions ─────────────────────────────── */
@@ -497,23 +509,29 @@ async function selectStudent(id) {
     bodyEl.innerHTML = '<div style="color:#475569;padding:20px;">Loading student data...</div>';
 
     try {
-        const [grammarRes, vocabRes, progressRes] = await Promise.all([
+        const [grammarRes, vocabRes, progressRes, topicsRes, badgesRes, pronRes] = await Promise.all([
             fetch(`/dashboard/api/students/${id}/grammar`),
             fetch(`/dashboard/api/students/${id}/vocabulary`),
             fetch(`/dashboard/api/students/${id}/progress`),
+            fetch(`/dashboard/api/students/${id}/topics`),
+            fetch(`/dashboard/api/students/${id}/badges`),
+            fetch(`/dashboard/api/students/${id}/pronunciation`),
         ]);
         const grammar = await grammarRes.json();
         const vocab = await vocabRes.json();
         const progress = await progressRes.json();
+        const topics = await topicsRes.json();
+        const badges = await badgesRes.json();
+        const pronunciation = await pronRes.json();
 
-        renderStudentDetail(student, grammar, vocab, progress);
+        renderStudentDetail(student, grammar, vocab, progress, topics, badges, pronunciation);
     } catch(e) {
         console.error('Failed to load student detail:', e);
         bodyEl.innerHTML = '<div style="color:#f87171;padding:20px;">Failed to load student data</div>';
     }
 }
 
-function renderStudentDetail(student, grammar, vocab, progress) {
+function renderStudentDetail(student, grammar, vocab, progress, topics, badges, pronunciation) {
     const bodyEl = document.getElementById('student-body');
     let html = '';
 
@@ -535,7 +553,44 @@ function renderStudentDetail(student, grammar, vocab, progress) {
             <div class="sc-value" style="color:#f87171">${student.pending_homework||0}</div>
             <div class="sc-label">Pending HW</div>
         </div>
+        <div class="stats-card">
+            <div class="sc-value" style="color:#fbbf24">⭐ ${student.xp||0}</div>
+            <div class="sc-label">XP</div>
+        </div>
+        <div class="stats-card">
+            <div class="sc-value" style="color:#f97316">${student.streak_days||0} 🔥</div>
+            <div class="sc-label">Streak</div>
+        </div>
     </div>`;
+
+    // Badges
+    if (badges && badges.length) {
+        const badgeEmoji = {
+            'first_lesson':'🐣','word_collector_10':'📚','word_master_50':'🎓','word_legend_100':'👑',
+            'streak_3':'🔥','streak_7':'⚡','streak_30':'🏅','quiz_ace':'🏆',
+            'grammar_hero':'📝','level_a2':'⬆️','level_b1':'🚀','level_b2':'🌟',
+            'topic_explorer_5':'🗺️','topic_explorer_10':'🌍','chatterbox':'💬','early_bird':'🌅'
+        };
+        html += `<div class="grammar-section"><h3>🏆 Badges</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            ${badges.map(b => `<div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:8px 12px;font-size:12px;">
+                ${badgeEmoji[b.badge_name]||'🏅'} ${esc(b.badge_name.replace(/_/g,' '))}
+            </div>`).join('')}
+            </div>
+        </div>`;
+    }
+
+    // Topics progress
+    if (topics && topics.length) {
+        const uniqueTopics = [...new Set(topics.map(t=>t.topic))];
+        html += `<div class="grammar-section"><h3>📚 Completed Topics (${uniqueTopics.length}/20)</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            ${uniqueTopics.map(t => `<div style="background:#064e3b;color:#6ee7b7;border-radius:6px;padding:4px 10px;font-size:12px;">
+                ✅ ${esc(t)}
+            </div>`).join('')}
+            </div>
+        </div>`;
+    }
 
     // Grammar chart
     if (grammar.length) {
@@ -579,6 +634,23 @@ function renderStudentDetail(student, grammar, vocab, progress) {
         if (vocab.length > 50) {
             html += `<div style="color:#64748b;font-size:11px;padding:8px;">Showing 50 of ${vocab.length} words</div>`;
         }
+        html += `</div>`;
+    }
+
+    // Pronunciation stats
+    if (pronunciation && pronunciation.length) {
+        html += `<div class="grammar-section"><h3>🗣 Pronunciation</h3>`;
+        html += pronunciation.slice(0, 15).map(p => {
+            const score = p.avg_score || 0;
+            const barClass = score >= 70 ? 'bar-good' : score >= 40 ? 'bar-ok' : 'bar-weak';
+            return `<div class="grammar-bar-row">
+                <div class="grammar-bar-label">${esc(p.word)}</div>
+                <div class="grammar-bar-track">
+                    <div class="grammar-bar-fill ${barClass}" style="width:${score}%"></div>
+                    <div class="grammar-bar-score">${score.toFixed(0)}% (${p.attempts}x)</div>
+                </div>
+            </div>`;
+        }).join('');
         html += `</div>`;
     }
 
@@ -638,6 +710,32 @@ async function loadSessions() {
         renderSessions();
         updateStats();
     } catch(e) { console.error(e); }
+}
+
+async function loadLeaderboard() {
+    try {
+        const r = await fetch('/dashboard/api/leaderboard');
+        const data = await r.json();
+        const el = document.getElementById('leaderboard-body');
+        if (!data.length) { el.innerHTML = '<div style="color:#475569;">No students yet.</div>'; return; }
+        const medals = ['🥇','🥈','🥉'];
+        el.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;">` +
+            data.map((s, i) => {
+                const medal = i < 3 ? medals[i] : `${i+1}.`;
+                const streak = s.streak_days > 0 ? ` <span style="color:#f97316;">🔥${s.streak_days}</span>` : '';
+                return `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;background:#1e293b;border:1px solid #334155;">
+                    <span style="font-size:20px;width:36px;text-align:center;">${medal}</span>
+                    <div style="flex:1;">
+                        <span style="color:#e2e8f0;font-weight:600;">${esc(s.name || 'Student #' + s.student_id)}</span>
+                        <span class="student-level level-${s.level||'A1'}" style="margin-left:8px;">${s.level||'A1'}</span>${streak}
+                    </div>
+                    <span style="color:#fbbf24;font-weight:700;font-size:16px;">⭐ ${s.xp||0}</span>
+                </div>`;
+            }).join('') + '</div>';
+    } catch(e) {
+        console.error('Failed to load leaderboard:', e);
+        document.getElementById('leaderboard-body').innerHTML = '<div style="color:#f87171;">Failed to load</div>';
+    }
 }
 
 loadSessions();
