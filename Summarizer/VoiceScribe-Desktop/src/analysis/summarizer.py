@@ -14,6 +14,7 @@ from analysis.prompts import (
     DIALOGUE_PROMPT,
     BATCH_DIARIZATION_PROMPT,
     POST_EDIT_PROMPT,
+    MEETING_PROTOCOL_PROMPT,
 )
 from utils.config import settings
 from utils.logger import log
@@ -123,6 +124,14 @@ class Summarizer:
             temperature=0.2,
         )
 
+    def meeting_protocol(self, transcript: str) -> str:
+        """Generate a detailed meeting protocol (minutes)."""
+        log.info("Generating meeting protocol...")
+        return self._call_llm(
+            MEETING_PROTOCOL_PROMPT.format(transcript=transcript),
+            temperature=0.3,
+        )
+
     def full_analysis(self, transcript: str) -> dict:
         """Run all analyses and return combined results."""
         return {
@@ -132,4 +141,5 @@ class Summarizer:
             "topics": self.analyze_topics(transcript),
             "translation": self.translate(transcript),
             "dialogue": self.reconstruct_dialogue(transcript),
+            "protocol": self.meeting_protocol(transcript),
         }

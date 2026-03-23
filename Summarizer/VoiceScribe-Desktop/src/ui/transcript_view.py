@@ -219,6 +219,7 @@ class AnalysisWindow(ctk.CTkToplevel):
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
 
         self.summary_tab = self.tabview.add("\U0001f4cb Summary")
+        self.protocol_tab = self.tabview.add("\U0001f4dd Protocol")
         self.actions_tab = self.tabview.add("\u2705 Actions")
         self.points_tab = self.tabview.add("\U0001f4cc Key Points")
         self.translate_tab = self.tabview.add("\U0001f310 Translation")
@@ -230,6 +231,13 @@ class AnalysisWindow(ctk.CTkToplevel):
             self.summary_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
         )
         self.summary_text.pack(fill="both", expand=True)
+
+        # Protocol (Meeting Minutes)
+        self._protocol_copy = self._make_copy_btn(self.protocol_tab, "protocol")
+        self.protocol_text = ctk.CTkTextbox(
+            self.protocol_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
+        )
+        self.protocol_text.pack(fill="both", expand=True)
 
         # Actions
         self._actions_copy = self._make_copy_btn(self.actions_tab, "actions")
@@ -285,6 +293,7 @@ class AnalysisWindow(ctk.CTkToplevel):
         """Copy content of a specific tab to clipboard."""
         text_map = {
             "summary": lambda: self.summary_text.get("1.0", "end").strip(),
+            "protocol": lambda: self.protocol_text.get("1.0", "end").strip(),
             "actions": lambda: "\n".join(
                 f"- {w.winfo_children()[1].cget('text')}" if len(w.winfo_children()) > 1 else ""
                 for w in self.actions_scroll.winfo_children()
@@ -307,6 +316,12 @@ class AnalysisWindow(ctk.CTkToplevel):
         self.summary_text.delete("1.0", "end")
         self.summary_text.insert("1.0", text)
         self.summary_text.configure(state="disabled")
+
+    def set_protocol(self, text: str):
+        self.protocol_text.configure(state="normal")
+        self.protocol_text.delete("1.0", "end")
+        self.protocol_text.insert("1.0", text)
+        self.protocol_text.configure(state="disabled")
 
     def set_actions(self, actions: list[dict]):
         for w in self.actions_scroll.winfo_children():
@@ -382,6 +397,7 @@ class AnalysisWindow(ctk.CTkToplevel):
 
     def clear(self):
         self.set_summary("")
+        self.set_protocol("")
         for w in self.actions_scroll.winfo_children():
             w.destroy()
         self.set_key_points([])

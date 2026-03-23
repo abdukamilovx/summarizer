@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     WHISPER_MODEL: str = "whisper-1"
     ANALYSIS_MODEL: str = "gpt-4o"
 
+    # Telegram
+    TELEGRAM_BOT_TOKEN: str = ""
+
     # Audio
     SAMPLE_RATE: int = 16000
     CHUNK_DURATION_SEC: int = 30
