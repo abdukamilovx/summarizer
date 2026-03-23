@@ -15,7 +15,7 @@ from tkinter import filedialog
 from typing import Optional
 
 from audio.capture import AudioCapture, AudioChunk, WAV_SAMPLE_RATE
-from audio.mixer import AudioMixer
+# AudioMixer removed — raw audio passed directly
 from audio.preprocessor import enhance_speech
 from transcription.whisper_api import WhisperAPITranscriber
 from transcription.streaming import StreamingTranscriber
@@ -42,7 +42,7 @@ class MainWindow(ctk.CTk):
 
         # State
         self._audio_capture: Optional[AudioCapture] = None
-        self._mixer = AudioMixer()
+        # No mixer — direct audio
         self._audio_buffer: list[np.ndarray] = []
         self._hq_audio_buffer: list[np.ndarray] = []
         self._transcription_result: Optional[TranscriptionResult] = None
@@ -133,36 +133,74 @@ class MainWindow(ctk.CTk):
             command=self._load_file, width=90,
         ).pack(side="left", padx=4)
 
-        # Toggles
+        # Multi-language selector (up to 4 languages)
+        ctk.CTkLabel(bottom, text="Lang:", font=("Segoe UI", 12)).pack(side="left", padx=(4, 2))
+        lang_values = [
+            "—", "Auto", "English", "Russian", "Uzbek",
+            "Chinese", "Japanese", "Korean",
+            "German", "French", "Spanish",
+            "Turkish", "Arabic", "Hindi",
+            "Italian", "Portuguese", "Ukrainian",
+        ]
+        self._lang_vars: list[ctk.StringVar] = []
+        self._lang_menus: list[ctk.CTkOptionMenu] = []
+        for i in range(4):
+            var = ctk.StringVar(value="Auto" if i == 0 else "—")
+            menu = ctk.CTkOptionMenu(
+                bottom, variable=var, width=85, values=lang_values,
+                font=("Segoe UI", 11),
+            )
+            menu.pack(side="left", padx=1)
+            self._lang_vars.append(var)
+            self._lang_menus.append(menu)
+
+        ctk.CTkLabel(bottom, text="|", text_color="gray").pack(side="left", padx=4)
+
+        # Audio source toggles
+        self._mic_var = ctk.BooleanVar(value=True)
+        ctk.CTkSwitch(
+            bottom, text="\U0001f3a4 Mic",
+            variable=self._mic_var, onvalue=True, offvalue=False,
+        ).pack(side="left", padx=6)
+
+        self._system_audio_var = ctk.BooleanVar(value=False)
+        ctk.CTkSwitch(
+            bottom, text="\U0001f50a System",
+            variable=self._system_audio_var, onvalue=True, offvalue=False,
+        ).pack(side="left", padx=6)
+
+        ctk.CTkLabel(bottom, text="|", text_color="gray").pack(side="left", padx=4)
+
+        # Feature toggles
         self._realtime_var = ctk.BooleanVar(value=True)
         ctk.CTkSwitch(
             bottom, text="Real-time",
             variable=self._realtime_var, onvalue=True, offvalue=False,
-        ).pack(side="left", padx=8)
+        ).pack(side="left", padx=6)
 
         self._translate_var = ctk.BooleanVar(value=True)
         ctk.CTkSwitch(
             bottom, text="\U0001f310 Translate",
             variable=self._translate_var, onvalue=True, offvalue=False,
-        ).pack(side="left", padx=8)
+        ).pack(side="left", padx=6)
 
         self._denoise_var = ctk.BooleanVar(value=True)
         ctk.CTkSwitch(
-            bottom, text="\U0001f50a Denoise",
+            bottom, text="Denoise",
             variable=self._denoise_var, onvalue=True, offvalue=False,
-        ).pack(side="left", padx=8)
+        ).pack(side="left", padx=6)
 
         self._correction_var = ctk.BooleanVar(value=True)
         ctk.CTkSwitch(
-            bottom, text="\u270f\ufe0f Correct",
+            bottom, text="Correct",
             variable=self._correction_var, onvalue=True, offvalue=False,
-        ).pack(side="left", padx=8)
+        ).pack(side="left", padx=6)
 
         self._diarize_var = ctk.BooleanVar(value=False)
         ctk.CTkSwitch(
-            bottom, text="\U0001f3a4 Speakers",
+            bottom, text="Speakers",
             variable=self._diarize_var, onvalue=True, offvalue=False,
-        ).pack(side="left", padx=8)
+        ).pack(side="left", padx=6)
 
         # Right side buttons
         self.analyze_btn = ctk.CTkButton(
@@ -191,6 +229,8 @@ class MainWindow(ctk.CTk):
         do_translate = self._translate_var.get()
         do_correct = self._correction_var.get()
         do_denoise = self._denoise_var.get()
+        whisper_lang = self._get_whisper_language()
+        whisper_prompt = self._get_whisper_prompt()
 
         # Corrector for periodic self-healing
         self._corrector = None
@@ -209,8 +249,10 @@ class MainWindow(ctk.CTk):
             self._streaming_transcriber = StreamingTranscriber(
                 transcriber=self.transcriber,
                 sample_rate=settings.SAMPLE_RATE,
-                fast_interval=1.0,
-                group_size=5,
+                fast_interval=5.0,
+                group_size=2,
+                language=whisper_lang,
+                prompt=whisper_prompt,
                 # 4-panel callbacks
                 on_raw_text=self._on_raw_text,
                 on_raw_translation=self._on_raw_translation if do_translate else None,
@@ -227,17 +269,23 @@ class MainWindow(ctk.CTk):
                 live_correction=do_correct,
             )
             self._streaming_transcriber.start()
+            selected_langs = self._get_selected_languages()
             log.info(
-                "Real-time ON (translate=%s, correct=%s, denoise=%s)",
+                "Real-time ON (langs=%s, prompt=%s, translate=%s, correct=%s, denoise=%s)",
+                selected_langs or ["auto"], bool(whisper_prompt),
                 do_translate, do_correct, do_denoise,
             )
 
-        # Start audio capture
+        # Start audio capture (respect toggles)
+        do_mic = self._mic_var.get()
+        do_system = self._system_audio_var.get()
+        if not do_mic and not do_system:
+            do_mic = True
         self._audio_capture = AudioCapture(
             sample_rate=settings.SAMPLE_RATE,
             chunk_duration=0.1,
-            capture_microphone=True,
-            capture_system=True,
+            capture_microphone=do_mic,
+            capture_system=do_system,
         )
         self._audio_capture.on_audio(self._on_audio_chunk)
         self._audio_capture.on_hq_audio(self._on_hq_audio_chunk)
@@ -259,10 +307,6 @@ class MainWindow(ctk.CTk):
         if self._audio_capture:
             self._audio_capture.stop()
             self._audio_capture = None
-
-        flushed = self._mixer.flush(settings.SAMPLE_RATE)
-        if flushed:
-            self._audio_buffer.append(flushed.data)
 
         self.recording_panel.status_label.configure(
             text="\u23f3 Finishing...", text_color="#FF9800",
@@ -317,16 +361,14 @@ class MainWindow(ctk.CTk):
     # -- Audio callbacks --
 
     def _on_audio_chunk(self, chunk: AudioChunk):
-        mixed = self._mixer.add_chunk(chunk)
-        if mixed is not None:
-            self._audio_buffer.append(mixed.data)
+        self._audio_buffer.append(chunk.data)
 
-            if self._streaming_transcriber:
-                self._streaming_transcriber.add_audio(mixed.data)
+        if self._streaming_transcriber:
+            self._streaming_transcriber.add_audio(chunk.data)
 
-            rms = float(np.sqrt(np.mean(mixed.data ** 2)))
-            level = min(1.0, rms * 10)
-            self.after(0, self.waveform.push_level, level)
+        rms = float(np.sqrt(np.mean(chunk.data ** 2)))
+        level = min(1.0, rms * 10)
+        self.after(0, self.waveform.push_level, level)
 
     def _on_hq_audio_chunk(self, chunk: AudioChunk):
         self._hq_audio_buffer.append(chunk.data)
@@ -567,6 +609,59 @@ class MainWindow(ctk.CTk):
         log.info(f"Exported to {filepath}")
 
     # -- Helpers --
+
+    _LANG_MAP = {
+        "Auto": None, "—": None,
+        "English": "en", "Russian": "ru", "Uzbek": "uz",
+        "Chinese": "zh", "Japanese": "ja", "Korean": "ko",
+        "German": "de", "French": "fr", "Spanish": "es",
+        "Turkish": "tr", "Arabic": "ar", "Hindi": "hi",
+        "Italian": "it", "Portuguese": "pt", "Ukrainian": "uk",
+    }
+
+    # Prompt hints for languages that Whisper struggles with
+    _LANG_PROMPTS = {
+        "uz": "Assalomu alaykum. Bugun biz muhim masalalarni muhokama qilamiz.",
+        "ru": "Здравствуйте. Сегодня мы обсудим важные вопросы.",
+        "en": "Hello. Today we will discuss important matters.",
+        "zh": "你好。今天我们将讨论重要的事情。",
+        "ja": "こんにちは。今日は重要なことについて話し合います。",
+        "ko": "안녕하세요. 오늘 중요한 사항을 논의하겠습니다.",
+        "ar": "مرحبا. اليوم سنناقش أمور مهمة.",
+        "hi": "नमस्ते। आज हम महत्वपूर्ण मुद्दों पर चर्चा करेंगे।",
+        "tr": "Merhaba. Bugün önemli konuları tartışacağız.",
+    }
+
+    def _get_selected_languages(self) -> list[str]:
+        """Return list of selected ISO language codes (no duplicates, no None)."""
+        langs = []
+        seen = set()
+        for var in self._lang_vars:
+            code = self._LANG_MAP.get(var.get())
+            if code and code not in seen:
+                langs.append(code)
+                seen.add(code)
+        return langs
+
+    def _get_whisper_language(self) -> Optional[str]:
+        """Return single language for Whisper API, or None for auto-detect."""
+        langs = self._get_selected_languages()
+        if len(langs) == 1:
+            return langs[0]
+        # Multiple languages or Auto → let Whisper auto-detect
+        return None
+
+    def _get_whisper_prompt(self) -> Optional[str]:
+        """Build prompt hint for Whisper to improve recognition of selected languages."""
+        langs = self._get_selected_languages()
+        if not langs:
+            return None
+        # Build combined prompt from all selected languages
+        hints = []
+        for lang in langs:
+            if lang in self._LANG_PROMPTS:
+                hints.append(self._LANG_PROMPTS[lang])
+        return " ".join(hints) if hints else None
 
     def _show_error(self, message: str):
         self.recording_panel.status_label.configure(text=message, text_color="#E53935")

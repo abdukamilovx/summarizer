@@ -20,6 +20,9 @@ from audio.preprocessor import enhance_speech
 from utils.config import settings
 from utils.logger import log
 
+# Lazy import for Uzbek local model
+_uzbek_transcriber = None
+
 
 class StreamingTranscriber:
     """Multi-panel streaming transcriber.
@@ -43,6 +46,8 @@ class StreamingTranscriber:
         on_corrected: Optional[Callable] = None,
         on_corrected_translation: Optional[Callable] = None,
         # Settings
+        language: Optional[str] = None,
+        prompt: Optional[str] = None,
         translate_to_russian: bool = False,
         noise_reduction: bool = True,
         corrector=None,
@@ -60,6 +65,8 @@ class StreamingTranscriber:
         self._on_corrected = on_corrected
         self._on_corrected_translation = on_corrected_translation
 
+        self._language = language
+        self._prompt = prompt
         self._translate = translate_to_russian
         self._noise_reduction = noise_reduction
         self._corrector = corrector
@@ -83,6 +90,63 @@ class StreamingTranscriber:
 
         # OpenAI client (lazy)
         self._openai: Optional[OpenAI] = None
+
+        # Uzbek local model (lazy, shared across instances)
+        self._uzbek_transcriber = None
+        if self._language == "uz" or (self._prompt and "uz" in str(self._prompt).lower()):
+            self._init_uzbek_model()
+
+    def _init_uzbek_model(self):
+        """Initialize local Uzbek Whisper model in background."""
+        def load():
+            global _uzbek_transcriber
+            if _uzbek_transcriber is not None:
+                self._uzbek_transcriber = _uzbek_transcriber
+                return
+            try:
+                from transcription.uzbek_stt import UzbekTranscriber
+                uz = UzbekTranscriber(device="auto")
+                uz.load_model()
+                if uz.is_ready:
+                    _uzbek_transcriber = uz
+                    self._uzbek_transcriber = uz
+                    log.info("Uzbek local model ready for streaming")
+                else:
+                    log.warning("Uzbek local model failed to load, using Whisper API")
+            except Exception as e:
+                log.warning(f"Uzbek model init error: {e}")
+        threading.Thread(target=load, daemon=True).start()
+
+    # Languages NOT supported by OpenAI Whisper API — must use local models
+    _LOCAL_ONLY_LANGS = {"uz"}
+
+    def _transcribe_audio(self, audio: np.ndarray) -> TranscriptionResult:
+        """Transcribe audio using appropriate engine (Uzbek local or Whisper API)."""
+        is_local_only = self._language in self._LOCAL_ONLY_LANGS
+
+        # Use local Uzbek model if available and language matches
+        if self._uzbek_transcriber and self._uzbek_transcriber.is_ready:
+            if self._language == "uz" or self._language is None:
+                result = self._uzbek_transcriber.transcribe_numpy(
+                    audio, sample_rate=self._sample_rate,
+                )
+                if result.text.strip():
+                    return result
+                # If empty and not local-only, fall through to Whisper API
+                if is_local_only:
+                    return result
+
+        # If language is local-only but model not ready yet — skip chunk
+        if is_local_only and (not self._uzbek_transcriber or not self._uzbek_transcriber.is_ready):
+            log.debug("Waiting for local model to load, skipping chunk...")
+            return TranscriptionResult(text="", segments=[], language=self._language or "", duration=0.0)
+
+        # Default: Whisper API (don't pass unsupported languages)
+        api_language = self._language if self._language not in self._LOCAL_ONLY_LANGS else None
+        return self._transcriber.transcribe_numpy(
+            audio, sample_rate=self._sample_rate,
+            language=api_language, prompt=self._prompt,
+        )
 
     def start(self):
         self._is_running = True
@@ -162,11 +226,35 @@ class StreamingTranscriber:
                 break
         return np.concatenate(parts) if parts else np.array([], dtype=np.float32)
 
+    # Known Whisper hallucinations on silence/quiet audio
+    _HALLUCINATIONS = {
+        "you", "you.", "bye", "bye.", "bye!", "bye-bye", "bye-bye.",
+        "thank you", "thank you.", "thanks", "thanks.",
+        "oh", "oh.", "ah", "ah.", "uh", "uh.", "i", "and", "the",
+        "thanks for watching", "thanks for watching!",
+        "thanks for watching.", "thank you for watching",
+        "thank you for watching!", "see you next time",
+        "subscribe", "like and subscribe",
+        "bye bye", "bye bye!", "goodbye", "goodbye.",
+    }
+
+    # Minimum RMS energy to consider audio as speech (not silence)
+    # Low threshold to allow system audio (typically quieter than mic)
+    _MIN_SPEECH_RMS = 0.001
+
     # -- Fast path: Panel 1 + Panel 2 --
 
     def _process_fast_chunk(self, audio: np.ndarray):
-        """Transcribe 1-sec chunk -> Panel 1 (instant) + Panel 2 (translation)."""
+        """Transcribe chunk -> Panel 1 (instant) + Panel 2 (translation)."""
         try:
+            # Skip silent audio — prevents Whisper hallucinations
+            rms = float(np.sqrt(np.mean(audio ** 2)))
+            if rms < self._MIN_SPEECH_RMS:
+                self._group_audio.append(audio)
+                self._time_offset += len(audio) / self._sample_rate
+                log.debug(f"Skipped silent chunk (rms={rms:.5f})")
+                return
+
             processed = audio
             if self._noise_reduction:
                 processed = enhance_speech(
@@ -174,9 +262,7 @@ class StreamingTranscriber:
                     enable_bandpass=True, enable_noise_reduction=True,
                 )
 
-            result = self._transcriber.transcribe_numpy(
-                processed, sample_rate=self._sample_rate
-            )
+            result = self._transcribe_audio(processed)
 
             if not result.text.strip():
                 self._group_audio.append(audio)
@@ -184,6 +270,22 @@ class StreamingTranscriber:
                 return
 
             text = result.text.strip()
+
+            # Filter Whisper hallucinations
+            text_clean = text.lower().strip(".,!? ")
+            if text_clean in self._HALLUCINATIONS:
+                log.debug(f"Filtered hallucination: '{text}'")
+                self._group_audio.append(audio)
+                self._time_offset += len(audio) / self._sample_rate
+                return
+
+            # Filter repetition loops ("word word word word...")
+            if self._is_repetition_loop(text):
+                log.debug(f"Filtered repetition loop: '{text[:50]}'")
+                self._group_audio.append(audio)
+                self._time_offset += len(audio) / self._sample_rate
+                return
+
             speaker = (
                 result.segments[0].speaker
                 if result.segments and result.segments[0].speaker
@@ -280,9 +382,7 @@ class StreamingTranscriber:
                     enable_bandpass=True, enable_noise_reduction=True,
                 )
 
-            result = self._transcriber.transcribe_numpy(
-                processed, sample_rate=self._sample_rate
-            )
+            result = self._transcribe_audio(processed)
             retranscription = result.text.strip()
 
             if not retranscription:
@@ -291,22 +391,32 @@ class StreamingTranscriber:
             instant_combined = " ".join(instant_texts)
             speaker = next((s for s in speakers if s), None)
 
+            log.info(
+                f"Group re-transcription: '{retranscription[:60]}' "
+                f"(instant: '{instant_combined[:60]}')"
+            )
+
             # 2. Compare
             if instant_combined.strip() == retranscription.strip():
                 corrected = instant_combined
+                log.debug("Group: identical, no correction needed")
             else:
                 corrected = self._gpt_compare(instant_combined, retranscription)
                 if not corrected:
                     corrected = instant_combined
+                if corrected != instant_combined:
+                    log.info(f"Group corrected: '{corrected[:60]}'")
 
             # === PANEL 3: CORRECTED TEXT ===
             if self._on_corrected:
+                log.info(f"-> Panel 3: '{corrected[:60]}'")
                 self._on_corrected(corrected, speaker)
 
             # === PANEL 4: CORRECTED TRANSLATION ===
             if self._translate and self._on_corrected_translation:
                 translated = self._translate_text(corrected)
                 if translated:
+                    log.info(f"-> Panel 4: '{translated[:60]}'")
                     self._on_corrected_translation(translated)
 
         except Exception as e:
@@ -335,12 +445,43 @@ class StreamingTranscriber:
         except Exception as e:
             log.error(f"Final group error: {e}")
 
+    # -- Filters --
+
+    @staticmethod
+    def _is_repetition_loop(text: str) -> bool:
+        """Detect Whisper repetition loops like 'word word word word'."""
+        words = text.lower().split()
+        if len(words) < 4:
+            return False
+        # Check if any 1-3 word phrase repeats 3+ times
+        for phrase_len in range(1, 4):
+            if len(words) < phrase_len * 3:
+                continue
+            phrase = " ".join(words[:phrase_len])
+            count = 0
+            for i in range(0, len(words) - phrase_len + 1, phrase_len):
+                chunk = " ".join(words[i:i + phrase_len])
+                if chunk == phrase:
+                    count += 1
+                else:
+                    break
+            if count >= 3:
+                return True
+        return False
+
     # -- GPT comparison --
 
     def _gpt_compare(self, instant: str, retranscribed: str) -> str:
         try:
             if self._openai is None:
                 self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+            # Language-aware system prompt for correction
+            lang_note = ""
+            if self._language == "uz":
+                lang_note = " Текст на узбекском языке (латиница). Сохраняй узбекские слова как есть."
+            elif self._language:
+                lang_note = f" Язык: {self._language}."
 
             response = self._openai.chat.completions.create(
                 model="gpt-4o-mini",
@@ -349,9 +490,9 @@ class StreamingTranscriber:
                         "role": "system",
                         "content": (
                             "Ты модуль сравнения двух транскрипций одного и того же аудио.\n"
-                            "Первая — мгновенная (собрана из коротких 1-секундных фрагментов, "
+                            "Первая — мгновенная (собрана из коротких 5-секундных фрагментов, "
                             "может содержать ошибки на стыках слов).\n"
-                            "Вторая — повторная (из объединённого аудио ~5 секунд, "
+                            "Вторая — повторная (из объединённого аудио ~10 секунд, "
                             "более точная за счёт контекста).\n\n"
                             "Правила:\n"
                             "1. Сравни обе транскрипции пословно.\n"
@@ -360,14 +501,14 @@ class StreamingTranscriber:
                             "и звучанию слово.\n"
                             "4. Делай МИНИМАЛЬНЫЕ изменения. Не переписывай текст.\n"
                             "5. Не добавляй слова, которых нет ни в одной из версий.\n"
-                            "6. Верни ТОЛЬКО итоговый текст, без пояснений."
+                            f"6. Верни ТОЛЬКО итоговый текст, без пояснений.{lang_note}"
                         ),
                     },
                     {
                         "role": "user",
                         "content": (
-                            f"МГНОВЕННАЯ ТРАНСКРИПЦИЯ (из 1-сек фрагментов):\n{instant}\n\n"
-                            f"ПОВТОРНАЯ ТРАНСКРИПЦИЯ (из 5-сек аудио):\n{retranscribed}\n\n"
+                            f"МГНОВЕННАЯ ТРАНСКРИПЦИЯ (из 5-сек фрагментов):\n{instant}\n\n"
+                            f"ПОВТОРНАЯ ТРАНСКРИПЦИЯ (из 10-сек аудио):\n{retranscribed}\n\n"
                             f"ЛУЧШИЙ ВАРИАНТ:"
                         ),
                     },
@@ -398,34 +539,59 @@ class StreamingTranscriber:
         kept_ratio = len(common) / len(orig_words)
         return kept_ratio >= 0.5
 
+    # Languages where NLLB-200 gives poor quality → always use GPT
+    _GPT_TRANSLATE_LANGS = {"uz", "kk", "tg"}
+
     # -- Translation --
 
     def _translate_text(self, text: str) -> str:
         if not text.strip():
             return ""
         try:
-            # Local translator (fast, no API call)
-            if self._local_translator and self._local_translator.is_ready:
+            # For Uzbek and other poorly-supported NLLB languages → GPT directly
+            use_gpt = self._language in self._GPT_TRANSLATE_LANGS
+
+            # Local translator (fast, no API call) — only for well-supported languages
+            if (
+                not use_gpt
+                and self._local_translator
+                and self._local_translator.is_ready
+            ):
                 return self._local_translator.translate(text, target_lang="ru")
 
-            # GPT fallback
-            if self._openai is None:
-                self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
-
-            response = self._openai.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[
-                    {
-                        "role": "system",
-                        "content": "Ты переводчик. Переводи на русский. Верни ТОЛЬКО перевод.",
-                    },
-                    {"role": "user", "content": text},
-                ],
-                temperature=0.2,
-                max_tokens=1000,
-            )
-            return (response.choices[0].message.content or "").strip()
+            # GPT translation (better quality for Uzbek, Kazakh, etc.)
+            return self._translate_gpt(text)
 
         except Exception as e:
             log.error(f"Translation error: {e}")
             return ""
+
+    def _translate_gpt(self, text: str) -> str:
+        """Translate using GPT-4o-mini — high quality for all languages."""
+        if self._openai is None:
+            self._openai = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+        # Detect source language hint for better translation
+        lang_hint = ""
+        if self._language == "uz":
+            lang_hint = " Исходный текст на узбекском языке (латиница)."
+        elif self._language == "kk":
+            lang_hint = " Исходный текст на казахском языке."
+
+        response = self._openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Ты профессиональный переводчик. Переводи на русский язык."
+                        f"{lang_hint}"
+                        " Верни ТОЛЬКО перевод, без пояснений и комментариев."
+                    ),
+                },
+                {"role": "user", "content": text},
+            ],
+            temperature=0.2,
+            max_tokens=1000,
+        )
+        return (response.choices[0].message.content or "").strip()

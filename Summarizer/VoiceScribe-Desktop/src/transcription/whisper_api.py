@@ -28,6 +28,7 @@ class WhisperAPITranscriber(TranscriptionEngine):
         self,
         audio_data: bytes,
         language: Optional[str] = None,
+        prompt: Optional[str] = None,
     ) -> TranscriptionResult:
         """Transcribe raw WAV bytes."""
         buf = io.BytesIO(audio_data)
@@ -41,6 +42,8 @@ class WhisperAPITranscriber(TranscriptionEngine):
         }
         if language:
             kwargs["language"] = language
+        if prompt:
+            kwargs["prompt"] = prompt
 
         response = self.client.audio.transcriptions.create(**kwargs)
 
@@ -68,19 +71,21 @@ class WhisperAPITranscriber(TranscriptionEngine):
         self,
         filepath: str,
         language: Optional[str] = None,
+        prompt: Optional[str] = None,
     ) -> TranscriptionResult:
         """Transcribe an audio file from disk."""
         with open(filepath, "rb") as f:
-            return self.transcribe(f.read(), language=language)
+            return self.transcribe(f.read(), language=language, prompt=prompt)
 
     def transcribe_numpy(
         self,
         audio: np.ndarray,
         sample_rate: int = 16000,
         language: Optional[str] = None,
+        prompt: Optional[str] = None,
     ) -> TranscriptionResult:
         """Transcribe a numpy array of audio samples."""
         buf = io.BytesIO()
         sf.write(buf, audio, sample_rate, format="WAV", subtype="FLOAT")
         buf.seek(0)
-        return self.transcribe(buf.read(), language=language)
+        return self.transcribe(buf.read(), language=language, prompt=prompt)

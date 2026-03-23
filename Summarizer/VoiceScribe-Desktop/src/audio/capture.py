@@ -6,6 +6,7 @@ High-quality recording:
 - Uses 44100 Hz for WAV export (resampled to 16000 for Whisper)
 - Small buffer (100ms) for smooth, glitch-free audio
 - Separate high-quality buffer for WAV file saving
+- Proper sinc-like resampling for system audio
 """
 import numpy as np
 from dataclasses import dataclass, field
@@ -51,11 +52,14 @@ class AudioCapture:
         self.capture_system = capture_system
 
         self._callbacks: list[Callable[[AudioChunk], None]] = []
-        self._hq_callbacks: list[Callable[[AudioChunk], None]] = []  # High-quality WAV callbacks
+        self._hq_callbacks: list[Callable[[AudioChunk], None]] = []
         self._is_capturing = False
         self._pyaudio = None
         self._mic_stream = None
         self._system_stream = None
+
+        # Resampler cache (lazy import)
+        self._resampler = None
 
     # -- public API --
 
@@ -143,7 +147,6 @@ class AudioCapture:
         self._system_sr = int(default_speakers["defaultSampleRate"])
         self._system_channels = max(1, int(default_speakers["maxInputChannels"]))
 
-        # Use smaller buffer for smoother capture
         system_frames = int(self._system_sr * self.chunk_duration)
 
         self._system_stream = self._pyaudio.open(
@@ -156,6 +159,11 @@ class AudioCapture:
             stream_callback=self._system_callback,
         )
 
+        log.info(
+            f"System audio: {self._system_sr}Hz, {self._system_channels}ch "
+            f"-> {self.sample_rate}Hz mono"
+        )
+
     def _mic_callback(self, in_data, frame_count, time_info, status):
         import pyaudiowpatch as pyaudio
 
@@ -164,7 +172,6 @@ class AudioCapture:
 
         audio = np.frombuffer(in_data, dtype=np.float32).copy()
 
-        # Emit for Whisper (already at target rate)
         chunk = AudioChunk(
             data=audio,
             sample_rate=self.sample_rate,
@@ -174,7 +181,6 @@ class AudioCapture:
         )
         self._emit(chunk)
 
-        # Emit high-quality version (upsample to 44.1kHz for WAV)
         if self._hq_callbacks:
             hq_audio = self._resample(audio, self.sample_rate, WAV_SAMPLE_RATE)
             hq_chunk = AudioChunk(
@@ -196,11 +202,21 @@ class AudioCapture:
 
         audio = np.frombuffer(in_data, dtype=np.float32).copy()
 
-        # Convert to mono
+        # Convert to mono (proper stereo downmix)
         if self._system_channels > 1:
-            audio = audio.reshape(-1, self._system_channels).mean(axis=1)
+            audio = audio.reshape(-1, self._system_channels)
+            # Use left+right average for stereo, mean for multi-channel
+            if self._system_channels == 2:
+                audio = (audio[:, 0] + audio[:, 1]) * 0.5
+            else:
+                audio = audio.mean(axis=1)
 
-        # Emit high-quality version BEFORE resampling (native rate → 44.1kHz)
+        # Prevent clipping only (no gain boost — let Whisper handle levels)
+        peak = np.max(np.abs(audio))
+        if peak > 0.95:
+            audio = audio * (0.9 / peak)
+
+        # Emit high-quality version BEFORE resampling
         if self._hq_callbacks:
             if self._system_sr != WAV_SAMPLE_RATE:
                 hq_audio = self._resample(audio, self._system_sr, WAV_SAMPLE_RATE)
@@ -215,9 +231,9 @@ class AudioCapture:
             )
             self._emit_hq(hq_chunk)
 
-        # Resample to Whisper rate (16kHz)
+        # Resample to Whisper rate (16kHz) with anti-aliasing
         if self._system_sr != self.sample_rate:
-            audio = self._resample(audio, self._system_sr, self.sample_rate)
+            audio = self._resample_quality(audio, self._system_sr, self.sample_rate)
 
         chunk = AudioChunk(
             data=audio,
@@ -231,13 +247,49 @@ class AudioCapture:
 
     @staticmethod
     def _resample(audio: np.ndarray, from_rate: int, to_rate: int) -> np.ndarray:
-        """High-quality linear interpolation resampling."""
+        """Linear interpolation resampling (fast, for HQ upsampling)."""
         if from_rate == to_rate:
             return audio
         ratio = to_rate / from_rate
         new_len = int(len(audio) * ratio)
         indices = np.linspace(0, len(audio) - 1, new_len)
         return np.interp(indices, np.arange(len(audio)), audio).astype(np.float32)
+
+    @staticmethod
+    def _resample_quality(audio: np.ndarray, from_rate: int, to_rate: int) -> np.ndarray:
+        """High-quality resampling with anti-aliasing for downsampling.
+
+        Uses low-pass filter before decimation to prevent aliasing artifacts
+        that cause garbled speech in Whisper.
+        """
+        if from_rate == to_rate:
+            return audio
+
+        try:
+            from scipy.signal import resample_poly
+            from math import gcd
+
+            g = gcd(from_rate, to_rate)
+            up = to_rate // g
+            down = from_rate // g
+
+            resampled = resample_poly(audio, up, down).astype(np.float32)
+            return resampled
+        except ImportError:
+            # Fallback: manual anti-alias + decimate
+            ratio = to_rate / from_rate
+            if ratio < 1.0:
+                # Low-pass filter before downsampling
+                cutoff_samples = int(len(audio) * ratio)
+                # Simple moving average as low-pass
+                kernel_size = max(1, int(1.0 / ratio))
+                if kernel_size > 1:
+                    kernel = np.ones(kernel_size, dtype=np.float32) / kernel_size
+                    audio = np.convolve(audio, kernel, mode='same')
+
+            new_len = int(len(audio) * ratio)
+            indices = np.linspace(0, len(audio) - 1, new_len)
+            return np.interp(indices, np.arange(len(audio)), audio).astype(np.float32)
 
     def _emit(self, chunk: AudioChunk) -> None:
         for cb in self._callbacks:

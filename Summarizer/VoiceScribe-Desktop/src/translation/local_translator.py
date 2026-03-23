@@ -13,8 +13,9 @@ from typing import Optional
 
 from utils.logger import log
 
-# Default model directory
-_MODEL_DIR = Path.home() / ".voicescribe" / "models" / "nllb-200-distilled-600M"
+# Store models next to the project on D: drive (download once, reuse forever)
+_PROJECT_DIR = Path(__file__).resolve().parent.parent.parent  # VoiceScribe-Desktop/
+_MODEL_DIR = _PROJECT_DIR / "models" / "nllb-200-distilled-600M"
 
 # NLLB language codes
 NLLB_LANG_CODES = {

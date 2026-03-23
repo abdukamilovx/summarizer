@@ -16,19 +16,29 @@ SPEAKER_COLORS = ["#42A5F5", "#66BB6A", "#FFA726", "#AB47BC", "#EF5350", "#26C6D
 
 
 class _TextPanel(ctk.CTkFrame):
-    """Single scrollable text panel with a header."""
+    """Single scrollable text panel with a header and copy button."""
 
     def __init__(self, master, title: str, header_color: str = "#E0E0E0", **kwargs):
         super().__init__(master, **kwargs)
         self._speaker_color_map: dict[str, str] = {}
 
-        header = ctk.CTkLabel(
-            self, text=title,
+        # Header row with title + copy button
+        header_frame = ctk.CTkFrame(self, fg_color="transparent")
+        header_frame.pack(fill="x", padx=8, pady=(6, 2))
+
+        ctk.CTkLabel(
+            header_frame, text=title,
             font=("Segoe UI", 13, "bold"),
             text_color=header_color,
             anchor="w",
+        ).pack(side="left")
+
+        self._copy_btn = ctk.CTkButton(
+            header_frame, text="\U0001f4cb", width=32, height=24,
+            font=("Segoe UI", 12), fg_color="transparent",
+            hover_color="#444444", command=self._copy_text,
         )
-        header.pack(fill="x", padx=8, pady=(6, 2))
+        self._copy_btn.pack(side="right", padx=2)
 
         self.textbox = ctk.CTkTextbox(
             self, font=("Segoe UI", 13), wrap="word", state="disabled",
@@ -44,6 +54,17 @@ class _TextPanel(ctk.CTkFrame):
             "translation", foreground="#64B5F6",
             font=("Segoe UI", 12, "italic"), lmargin1=10, lmargin2=10,
         )
+
+    def _copy_text(self):
+        """Copy panel text to clipboard."""
+        text = self.get_text()
+        if text:
+            self.clipboard_clear()
+            self.clipboard_append(text)
+            # Visual feedback
+            old_text = self._copy_btn.cget("text")
+            self._copy_btn.configure(text="\u2705")
+            self.after(1500, lambda: self._copy_btn.configure(text=old_text))
 
     def _get_speaker_tag(self, speaker: str) -> str:
         if speaker not in self._speaker_color_map:
@@ -204,22 +225,26 @@ class AnalysisWindow(ctk.CTkToplevel):
         self.dialogue_tab = self.tabview.add("\U0001f4ac Dialogue")
 
         # Summary
+        self._summary_copy = self._make_copy_btn(self.summary_tab, "summary")
         self.summary_text = ctk.CTkTextbox(
             self.summary_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
         )
         self.summary_text.pack(fill="both", expand=True)
 
         # Actions
+        self._actions_copy = self._make_copy_btn(self.actions_tab, "actions")
         self.actions_scroll = ctk.CTkScrollableFrame(self.actions_tab)
         self.actions_scroll.pack(fill="both", expand=True)
 
         # Key points
+        self._points_copy = self._make_copy_btn(self.points_tab, "points")
         self.points_text = ctk.CTkTextbox(
             self.points_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
         )
         self.points_text.pack(fill="both", expand=True)
 
         # Translation
+        self._translate_copy = self._make_copy_btn(self.translate_tab, "translate")
         self.translate_text = ctk.CTkTextbox(
             self.translate_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
         )
@@ -230,6 +255,7 @@ class AnalysisWindow(ctk.CTkToplevel):
         )
 
         # Dialogue
+        self._dialogue_copy = self._make_copy_btn(self.dialogue_tab, "dialogue")
         self.dialogue_text = ctk.CTkTextbox(
             self.dialogue_tab, wrap="word", font=("Segoe UI", 13), state="disabled",
         )
@@ -243,6 +269,38 @@ class AnalysisWindow(ctk.CTkToplevel):
             "dlg_translation", foreground="#90CAF9",
             font=("Segoe UI", 12, "italic"), lmargin1=20, lmargin2=20,
         )
+
+    def _make_copy_btn(self, parent, tab_key: str) -> ctk.CTkButton:
+        """Create a copy button at the top of a tab."""
+        btn = ctk.CTkButton(
+            parent, text="\U0001f4cb Copy", width=80, height=28,
+            font=("Segoe UI", 12), fg_color="#333333",
+            hover_color="#555555",
+            command=lambda: self._copy_tab(tab_key, btn),
+        )
+        btn.pack(anchor="e", padx=8, pady=(4, 2))
+        return btn
+
+    def _copy_tab(self, tab_key: str, btn: ctk.CTkButton):
+        """Copy content of a specific tab to clipboard."""
+        text_map = {
+            "summary": lambda: self.summary_text.get("1.0", "end").strip(),
+            "actions": lambda: "\n".join(
+                f"- {w.winfo_children()[1].cget('text')}" if len(w.winfo_children()) > 1 else ""
+                for w in self.actions_scroll.winfo_children()
+            ),
+            "points": lambda: self.points_text.get("1.0", "end").strip(),
+            "translate": lambda: self.translate_text.get("1.0", "end").strip(),
+            "dialogue": lambda: self.dialogue_text.get("1.0", "end").strip(),
+        }
+        getter = text_map.get(tab_key)
+        text = getter() if getter else ""
+        if text:
+            self.clipboard_clear()
+            self.clipboard_append(text)
+            old_text = btn.cget("text")
+            btn.configure(text="\u2705 Copied!")
+            self.after(1500, lambda: btn.configure(text=old_text))
 
     def set_summary(self, text: str):
         self.summary_text.configure(state="normal")
